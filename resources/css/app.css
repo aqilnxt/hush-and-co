@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  /* ── NAVY PALETTE ── */
+  --color-navy-900: #0E1A2E;
+  --color-navy-800: #1B2A4A;
+  --color-navy-600: #2D4270;
+  --color-navy-400: #6B7B95;
+  --color-navy-200: #B8C4D6;
+  --color-navy-100: #E8EEF7;
+
+  /* ── CREAM PALETTE ── */
+  --color-cream-100: #FDFAF5;
+  --color-cream-200: #F5EFE0;
+  --color-cream-300: #E8E0D0;
+  --color-cream-400: #C8B99A;
+  --color-cream-600: #8C6E52;
+
+  /* ── FONTS ── */
+  --font-playfair: "Playfair Display", serif;
+  --font-sans: "DM Sans", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #FDFAF5;
+}
