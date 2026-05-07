@@ -1,0 +1,16 @@
+$kind: http-request
+method: POST
+url: 'http://localhost:8000/api/auth/login'
+order: 1000
+headers:
+  - key: Accept
+    value: application/json
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "admin@hushandco.id",
+      "password": "password"
+    }
