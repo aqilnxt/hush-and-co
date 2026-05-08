@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\TableController;
 
 // ── PUBLIC ROUTES ──
 Route::prefix('auth')->group(function () {
@@ -12,9 +13,12 @@ Route::prefix('auth')->group(function () {
     Route::post('/login',    [AuthController::class, 'login']);
 });
 
-Route::get('/categories',   [CategoryController::class, 'index']);
-Route::get('/menus',        [MenuController::class, 'index']);
-Route::get('/menus/{id}',   [MenuController::class, 'show']);
+Route::get('/categories',              [CategoryController::class, 'index']);
+Route::get('/menus',                   [MenuController::class, 'index']);
+Route::get('/menus/{id}',              [MenuController::class, 'show']);
+Route::get('/tables',                  [TableController::class, 'index']);
+Route::get('/tables/number/{number}',  [TableController::class, 'findByNumber']);
+Route::get('/tables/{id}',             [TableController::class, 'show']);
 
 // ── PROTECTED ROUTES ──
 Route::middleware('auth:sanctum')->group(function () {
@@ -40,7 +44,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders',     [OrderController::class, 'store']);
 
     // Orders (staff & admin)
-    Route::get('/staff/orders',                    [OrderController::class, 'staffOrders']);
-    Route::patch('/orders/{id}/status',            [OrderController::class, 'updateStatus']);
-    Route::patch('/orders/{id}/payment',           [OrderController::class, 'confirmPayment']);
+    Route::get('/staff/orders',             [OrderController::class, 'staffOrders']);
+    Route::patch('/orders/{id}/status',     [OrderController::class, 'updateStatus']);
+    Route::patch('/orders/{id}/payment',    [OrderController::class, 'confirmPayment']);
+
+    // Tables (admin)
+    Route::post('/tables',                    [TableController::class, 'store']);
+    Route::put('/tables/{id}',                [TableController::class, 'update']);
+    Route::delete('/tables/{id}',             [TableController::class, 'destroy']);
+    Route::post('/tables/{id}/regenerate-qr', [TableController::class, 'regenerateQr']);
 });
