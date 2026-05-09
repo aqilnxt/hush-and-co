@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\TableController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\ReportController;
 
 // ── PUBLIC ROUTES ──
 Route::prefix('auth')->group(function () {
@@ -53,4 +55,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/tables/{id}',                [TableController::class, 'update']);
     Route::delete('/tables/{id}',             [TableController::class, 'destroy']);
     Route::post('/tables/{id}/regenerate-qr', [TableController::class, 'regenerateQr']);
+
+    // Dashboard & Report (admin)
+Route::get('/admin/dashboard',           [DashboardController::class, 'index']);
+Route::get('/admin/report',              [ReportController::class, 'index']);
+Route::get('/admin/report/export-pdf',   [ReportController::class, 'exportPdf']);
+Route::get('/admin/report/export-excel', [ReportController::class, 'exportExcel']);
 });
