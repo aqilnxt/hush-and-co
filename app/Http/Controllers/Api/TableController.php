@@ -92,20 +92,15 @@ public function store(Request $request): JsonResponse
     }
 
     // DELETE /api/tables/{id}
-    public function destroy(int $id): JsonResponse
-    {
-        $table = Table::findOrFail($id);
+public function destroy(int $id): JsonResponse
+{
+    $table = Table::findOrFail($id);
+    $table->delete();
 
-        if ($table->qr_code) {
-            Storage::disk('public')->delete($table->qr_code);
-        }
-
-        $table->delete();
-
-        return response()->json([
-            'message' => 'Meja berhasil dihapus!',
-        ]);
-    }
+    return response()->json([
+        'message' => 'Meja berhasil dihapus!',
+    ]);
+}
 
 // POST /api/tables/{id}/regenerate-qr
 public function regenerateQr(int $id): JsonResponse
