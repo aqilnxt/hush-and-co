@@ -15,7 +15,7 @@ export default function Checkout() {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     const orderInfo = JSON.parse(localStorage.getItem('orderInfo') || '{}');
     const subtotal = cart.reduce((a, c) => a + c.price * c.qty, 0);
-
+    
     const handleConfirm = async () => {
         setLoading(true);
         try {
