@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\UserController;
 
 // ── PUBLIC ROUTES ──
 Route::prefix('auth')->group(function () {
@@ -57,8 +58,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tables/{id}/regenerate-qr', [TableController::class, 'regenerateQr']);
 
     // Dashboard & Report (admin)
-Route::get('/admin/dashboard',           [DashboardController::class, 'index']);
-Route::get('/admin/report',              [ReportController::class, 'index']);
-Route::get('/admin/report/export-pdf',   [ReportController::class, 'exportPdf']);
-Route::get('/admin/report/export-excel', [ReportController::class, 'exportExcel']);
+    Route::get('/admin/dashboard',           [DashboardController::class, 'index']);
+    Route::get('/admin/report',              [ReportController::class, 'index']);
+    Route::get('/admin/report/export-pdf',   [ReportController::class, 'exportPdf']);
+    Route::get('/admin/report/export-excel', [ReportController::class, 'exportExcel']);
+
+    // User management (admin)
+    Route::get('/admin/users',        [UserController::class, 'index']);
+    Route::post('/admin/users',       [UserController::class, 'store']);
+    Route::put('/admin/users/{id}',   [UserController::class, 'update']);
 });
