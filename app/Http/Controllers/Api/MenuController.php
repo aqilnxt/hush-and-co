@@ -29,6 +29,24 @@ class MenuController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
+        if ($request->boolean('paginate') || $request->has('page')) {
+            $perPage = (int) $request->input('per_page', 10);
+
+            // Clone the query for stats BEFORE paginating (which modifies state)
+            $statsQuery = clone $query;
+            $paginated  = $query->paginate($perPage);
+
+            $stats = [
+                'total'       => (clone $statsQuery)->count(),
+                'available'   => (clone $statsQuery)->where('is_available', true)->count(),
+                'unavailable' => (clone $statsQuery)->where('is_available', false)->count(),
+            ];
+
+            return response()->json(array_merge($paginated->toArray(), [
+                'stats' => $stats,
+            ]));
+        }
+
         $menus = $query->get();
 
         return response()->json([

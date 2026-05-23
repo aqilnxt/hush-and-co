@@ -32,8 +32,10 @@ class OrderController extends Controller
             ->findOrFail($id);
 
         // Customer hanya bisa lihat ordernya sendiri
-        if ($request->user()->isCustomer() &&
-            $order->user_id !== $request->user()->id) {
+        if (
+            $request->user()->isCustomer() &&
+            $order->user_id !== $request->user()->id
+        ) {
             return response()->json([
                 'message' => 'Unauthorized'
             ], 403);
@@ -49,8 +51,8 @@ class OrderController extends Controller
     {
         $request->validate([
             'order_type'  => 'required|in:dine-in,takeaway',
-            'table_id'    => 'required_if:order_type,dine-in|exists:tables,id',
-            'pickup_name' => 'required_if:order_type,takeaway|string|max:255',
+            'table_id'    => 'required_if:order_type,dine-in|nullable|integer|exists:tables,id',
+            'pickup_name' => 'required_if:order_type,takeaway|nullable|string|max:255',
             'items'       => 'required|array|min:1',
             'items.*.menu_id'  => 'required|exists:menus,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -88,10 +90,10 @@ class OrderController extends Controller
             $order = Order::create([
                 'user_id'        => $request->user()->id,
                 'table_id'       => $request->order_type === 'dine-in'
-                                    ? $request->table_id : null,
+                    ? $request->table_id : null,
                 'order_type'     => $request->order_type,
                 'pickup_name'    => $request->order_type === 'takeaway'
-                                    ? $request->pickup_name : null,
+                    ? $request->pickup_name : null,
                 'status'         => 'pending',
                 'payment_status' => 'unpaid',
                 'total_price'    => $totalPrice,
@@ -106,7 +108,7 @@ class OrderController extends Controller
             // Update status meja jadi occupied
             if ($request->order_type === 'dine-in') {
                 Table::where('id', $request->table_id)
-                     ->update(['status' => 'occupied']);
+                    ->update(['status' => 'occupied']);
             }
 
             return $order;
@@ -139,13 +141,13 @@ class OrderController extends Controller
         // Kalau selesai → bebaskan meja
         if ($request->status === 'selesai' && $order->table_id) {
             Table::where('id', $order->table_id)
-                 ->update(['status' => 'available']);
+                ->update(['status' => 'available']);
         }
 
         // Kalau dibatalkan → bebaskan meja juga
         if ($request->status === 'dibatalkan' && $order->table_id) {
             Table::where('id', $order->table_id)
-                 ->update(['status' => 'available']);
+                ->update(['status' => 'available']);
         }
 
         return response()->json([
