@@ -106,23 +106,24 @@ export default function CustomerLayout() {
             title: 'Menu',
             subtitle: 'Pilih sajian favoritmu dan langsung pesan.',
             action: (
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                     <button
                         onClick={openMenuSearch}
-                        className="inline-flex items-center justify-center gap-2 rounded-full border border-cream-300 bg-white px-4 py-2 text-sm font-medium text-navy-700 hover:border-navy-400 hover:text-navy-900 transition"
+                        className="inline-flex items-center justify-center gap-2 rounded-full border border-cream-300 bg-white p-2.5 sm:px-4 sm:py-2 text-sm font-medium text-navy-700 hover:border-navy-400 hover:text-navy-900 transition"
                         title="Cari menu"
                     >
-                        <MagnifyingGlassIcon className="w-5 h-5" />
-                        Cari Menu
+                        <MagnifyingGlassIcon className="w-5 h-5 text-navy-600" />
+                        <span className="hidden sm:inline">Cari Menu</span>
                     </button>
                     <button
                         onClick={() => navigate('/cart')}
-                        className="relative inline-flex items-center gap-2 rounded-full bg-navy-800 px-4 py-2 text-sm font-semibold text-cream-100 hover:bg-navy-900 transition"
+                        className="relative inline-flex items-center justify-center gap-2 rounded-full bg-navy-800 p-2.5 sm:px-4 sm:py-2 text-sm font-semibold text-cream-100 hover:bg-navy-900 transition"
+                        title="Keranjang"
                     >
                         <ShoppingCartIcon className="w-5 h-5" />
-                        Keranjang
+                        <span className="hidden sm:inline">Keranjang</span>
                         {cartCount > 0 && (
-                            <span className="absolute -top-2 -right-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-cream-100 px-1 text-xs font-bold text-navy-900">
+                            <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-cream-100 px-1 text-[10px] sm:text-xs font-bold text-navy-900 ring-2 ring-navy-800 sm:ring-0">
                                 {cartCount}
                             </span>
                         )}
@@ -141,9 +142,11 @@ export default function CustomerLayout() {
             action: (
                 <button
                     onClick={() => navigate('/cart')}
-                    className="rounded-full border border-cream-300 bg-white px-4 py-2 text-sm font-semibold text-navy-700 hover:border-navy-400 hover:text-navy-900 transition"
+                    className="inline-flex items-center gap-2 rounded-full border border-cream-300 bg-white px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-navy-700 hover:border-navy-400 hover:text-navy-900 transition"
                 >
-                    Kembali ke Keranjang
+                    <ArrowLeftIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">Kembali ke Keranjang</span>
+                    <span className="sm:hidden">Kembali</span>
                 </button>
             ),
         },
@@ -153,9 +156,11 @@ export default function CustomerLayout() {
             action: (
                 <button
                     onClick={() => navigate('/menu')}
-                    className="rounded-full border border-cream-300 bg-white px-4 py-2 text-sm font-semibold text-navy-700 hover:border-navy-400 hover:text-navy-900 transition"
+                    className="inline-flex items-center gap-2 rounded-full border border-cream-300 bg-white px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-navy-700 hover:border-navy-400 hover:text-navy-900 transition"
                 >
-                    Kembali ke Menu
+                    <ArrowLeftIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">Kembali ke Menu</span>
+                    <span className="sm:hidden">Kembali</span>
                 </button>
             ),
         },
@@ -165,9 +170,11 @@ export default function CustomerLayout() {
             action: (
                 <button
                     onClick={() => navigate('/orders')}
-                    className="rounded-full border border-cream-300 bg-white px-4 py-2 text-sm font-semibold text-navy-700 hover:border-navy-400 hover:text-navy-900 transition"
+                    className="inline-flex items-center gap-2 rounded-full border border-cream-300 bg-white px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-navy-700 hover:border-navy-400 hover:text-navy-900 transition"
                 >
-                    Kembali ke Riwayat
+                    <ArrowLeftIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">Kembali ke Riwayat</span>
+                    <span className="sm:hidden">Kembali</span>
                 </button>
             ),
         },
@@ -177,9 +184,11 @@ export default function CustomerLayout() {
             action: (
                 <button
                     onClick={() => navigate('/menu')}
-                    className="rounded-full border border-cream-300 bg-white px-4 py-2 text-sm font-semibold text-navy-700 hover:border-navy-400 hover:text-navy-900 transition"
+                    className="inline-flex items-center gap-2 rounded-full border border-cream-300 bg-white px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-navy-700 hover:border-navy-400 hover:text-navy-900 transition"
                 >
-                    Kembali ke Menu
+                    <ArrowLeftIcon className="w-4 h-4" />
+                    <span className="hidden sm:inline">Kembali ke Menu</span>
+                    <span className="sm:hidden">Kembali</span>
                 </button>
             ),
         },

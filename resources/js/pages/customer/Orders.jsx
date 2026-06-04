@@ -308,7 +308,7 @@ export default function Orders() {
                                                     </p>
                                                     <div className="relative flex items-center justify-between w-full max-w-md mx-auto px-4 py-2">
                                                         {/* Background track line */}
-                                                        <div className="absolute left-8 right-8 top-[24px] h-0.5 bg-cream-300 -translate-y-1/2 z-0">
+                                                        <div className="absolute left-8 right-8 top-[18px] sm:top-[20px] h-0.5 bg-cream-300 -translate-y-1/2 z-0">
                                                             <div
                                                                 className="h-full bg-navy-800 transition-all duration-500"
                                                                 style={{

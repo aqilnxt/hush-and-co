@@ -288,52 +288,57 @@ export default function PublicLayout() {
                     </div>
                 </div>
 
-                <div className="mt-16 rounded-[32px] bg-navy-900 p-8 text-cream-100">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="space-y-3">
-                            <p className="text-sm uppercase tracking-[0.26em] text-cream-300">
-                                Bergabung dengan suasana
-                            </p>
-                            <p className="max-w-2xl text-base leading-relaxed text-cream-100">
-                                Dapatkan kabar menu baru, acara kopi, dan
-                                keuntungan loyalty langsung di inboxmu.
-                            </p>
-                        </div>
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                            <input
-                                type="email"
-                                placeholder="Email kamu"
-                                className="rounded-full border border-white/10 bg-white/10 px-5 py-3 text-sm text-cream-100 placeholder:text-cream-300 focus:outline-none focus:ring-2 focus:ring-cream-100/40"
-                            />
-                            <button className="rounded-full bg-cream-100 px-6 py-3 text-sm font-semibold text-navy-900 transition hover:bg-cream-200">
-                                Daftar
-                            </button>
+                <div className="mt-16 max-w-7xl mx-auto px-6 lg:px-12">
+                    <div className="rounded-[32px] bg-navy-900 p-8 lg:p-12 text-cream-100 shadow-xl relative overflow-hidden">
+                        {/* Subtle glow effect */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(circle,rgba(255,255,255,0.03),transparent_70%)] pointer-events-none" />
+                        
+                        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between relative z-10">
+                            <div className="space-y-3">
+                                <p className="text-xs uppercase tracking-[0.26em] text-cream-300 font-semibold">
+                                    Bergabung dengan suasana
+                                </p>
+                                <p className="max-w-2xl text-sm md:text-base leading-relaxed text-cream-200/90 font-light">
+                                    Dapatkan kabar menu baru, acara kopi, dan
+                                    keuntungan loyalty langsung di inboxmu.
+                                </p>
+                            </div>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full lg:w-auto">
+                                <input
+                                    type="email"
+                                    placeholder="Email kamu"
+                                    className="w-full sm:w-72 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-cream-100 placeholder:text-cream-400 focus:outline-none focus:ring-2 focus:ring-cream-100/40 focus:bg-white/10 transition-all duration-300"
+                                />
+                                <button className="w-full sm:w-auto rounded-full bg-cream-100 px-7 py-3 text-sm font-semibold text-navy-900 transition-all duration-300 hover:bg-cream-200 hover:scale-[1.02] active:scale-[0.98]">
+                                    Daftar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="border-t border-cream-200/70 bg-cream-100 py-6">
-                    <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between text-sm text-navy-600">
+                <div className="mt-16 border-t border-cream-200/70 bg-cream-100 py-8">
+                    <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col gap-6 md:flex-row md:items-center md:justify-between text-xs md:text-sm text-navy-600">
                         <p>© 2026 Hush & Co. Semua hak cipta dilindungi.</p>
-                        <div className="inline-flex items-center gap-3">
-                            <span className="inline-flex h-7 items-center rounded-full bg-emerald-500/15 px-3 text-emerald-700">
-                                <span className="mr-2 h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <div className="inline-flex flex-wrap items-center gap-3">
+                            <span className="inline-flex h-7 items-center rounded-full bg-emerald-500/15 px-3 text-xs font-medium text-emerald-700">
+                                <span className="mr-2 h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                                 Live Open
                             </span>
-                            <span className="italic">
+                            <span className="italic font-light">
                                 Santai, kopi siap dinikmati.
                             </span>
                         </div>
-                        <div className="flex flex-wrap gap-4">
+                        <div className="flex gap-6">
                             <button
                                 type="button"
-                                className="transition hover:text-navy-900"
+                                className="transition hover:text-navy-900 font-medium"
                             >
                                 Syarat
                             </button>
                             <button
                                 type="button"
-                                className="transition hover:text-navy-900"
+                                className="transition hover:text-navy-900 font-medium"
                             >
                                 Privasi
                             </button>

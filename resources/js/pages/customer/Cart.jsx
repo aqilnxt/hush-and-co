@@ -131,7 +131,7 @@ export default function Cart() {
     return (
         <div className="flex-1 min-h-screen overflow-y-auto bg-cream-100 flex flex-col">
             {/* STEP INDICATOR */}
-            <div className="bg-white border-b border-cream-300 px-6 md:px-12 py-6 shrink-0">
+            <div className="bg-white border-b border-cream-300 px-4 sm:px-6 md:px-12 py-6 shrink-0">
                 <div className="max-w-5xl mx-auto flex items-center justify-between">
                     {[
                         { label: 'Keranjang', active: true },
@@ -174,7 +174,7 @@ export default function Cart() {
             </div>
 
             {/* MAIN CONTENT */}
-            <div className="flex-1 w-full px-6 md:px-12 py-10">
+            <div className="flex-1 w-full px-4 sm:px-6 md:px-12 py-8 md:py-10">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* LEFT – Cart Items & Order Type */}
@@ -205,25 +205,25 @@ export default function Cart() {
                                             onClick={() =>
                                                 setOrderType(opt.val)
                                             }
-                                            className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition text-left ${
+                                            className={`flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-2 sm:gap-4 p-3 sm:p-4 rounded-2xl border-2 transition ${
                                                 orderType === opt.val
                                                     ? 'border-navy-800 bg-navy-50'
                                                     : 'border-cream-300 hover:border-navy-300 bg-white'
                                             }`}
                                         >
-                                            <span className="text-2xl">
+                                            <span className="text-2xl shrink-0">
                                                 {opt.icon}
                                             </span>
-                                            <div>
-                                                <p className="text-sm font-semibold text-navy-900">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-semibold text-navy-900 truncate">
                                                     {opt.label}
                                                 </p>
-                                                <p className="text-xs text-navy-400 mt-0.5">
+                                                <p className="text-xs text-navy-400 mt-0.5 hidden xs:block">
                                                     {opt.sub}
                                                 </p>
                                             </div>
                                             {orderType === opt.val && (
-                                                <span className="ml-auto w-6 h-6 rounded-full bg-navy-800 text-cream-100 text-xs flex items-center justify-center">
+                                                <span className="hidden sm:flex shrink-0 w-5 h-5 rounded-full bg-navy-800 text-cream-100 text-[10px] items-center justify-center self-center">
                                                     ✓
                                                 </span>
                                             )}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import LandingProfileDropdown from '../components/common/ProfileDropdown';
+import LandingProfileDropdown from '../components/common/LandingProfileDropdown';
 import api from '../api/axios';
 import {
     ArrowRightIcon,
@@ -385,7 +385,7 @@ export default function Landing() {
                                 <button
                                     type="button"
                                     onClick={handleOrderNow}
-                                    className={`rounded-full px-4 py-2.5 text-sm font-semibold transition-all duration-300 shadow-sm ${
+                                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-300 shadow-sm ${
                                         scrolled
                                             ? 'bg-navy-900 text-cream-100 hover:bg-navy-800'
                                             : 'bg-cream-100 text-navy-900 hover:bg-cream-200'

@@ -159,7 +159,7 @@ export default function Checkout() {
     return (
         <div className="flex-1 min-h-screen overflow-y-auto bg-cream-100 flex flex-col">
             {/* ========== STEP INDICATOR (konsisten dengan Cart) ========== */}
-            <div className="bg-white border-b border-cream-300 px-6 md:px-12 py-6 shrink-0">
+            <div className="bg-white border-b border-cream-300 px-4 sm:px-6 md:px-12 py-6 shrink-0">
                 <div className="max-w-5xl mx-auto flex items-center justify-between">
                     {[
                         { label: 'Keranjang', active: false, done: true },

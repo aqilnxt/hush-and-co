@@ -1,5 +1,4 @@
-import React from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 
 export default function AuthLayout() {
     const location = useLocation();
@@ -46,9 +45,23 @@ export default function AuthLayout() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy-900/95 via-navy-900/50 to-transparent" />
                 <div className="relative z-10 flex flex-col justify-between p-12 w-full h-full">
-                    <span className="font-playfair text-xl font-medium text-cream-200">
-                        Hush <span className="text-cream-600">&amp;</span> Co.
-                    </span>
+                    <Link to="/" className="flex items-center gap-3 hover:opacity-90 transition inline-flex self-start">
+                        <div className="h-9 w-9 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-navy-800">
+                            <img
+                                src="/images/hush-co-logo.png"
+                                alt="Hush & Co"
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    e.currentTarget.parentElement.innerHTML =
+                                        '<span class="font-playfair text-sm text-cream-100 w-full h-full flex items-center justify-center">H</span>';
+                                }}
+                            />
+                        </div>
+                        <span className="font-playfair text-lg font-medium tracking-[-0.02em] text-cream-100">
+                            Hush &amp; Co
+                        </span>
+                    </Link>
                     <div className="max-w-md">
                         <h2 className="font-playfair text-4xl font-medium text-white mb-4 leading-tight">
                             {leftPanel.title}
@@ -90,11 +103,23 @@ export default function AuthLayout() {
 
             <div className="flex-1 flex items-center justify-center p-8 bg-cream-100">
                 <div className="w-full max-w-md">
-                    <div className="lg:hidden text-center mb-8">
-                        <span className="font-playfair text-2xl font-medium text-navy-800">
-                            Hush <span className="text-cream-600">&amp;</span> Co.
+                    <Link to="/" className="lg:hidden flex items-center justify-center gap-3 mb-8 hover:opacity-90 transition">
+                        <div className="h-9 w-9 rounded-full overflow-hidden border border-navy-900/10 flex-shrink-0 bg-navy-800">
+                            <img
+                                src="/images/hush-co-logo.png"
+                                alt="Hush & Co"
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    e.currentTarget.parentElement.innerHTML =
+                                        '<span class="font-playfair text-sm text-cream-100 w-full h-full flex items-center justify-center">H</span>';
+                                }}
+                            />
+                        </div>
+                        <span className="font-playfair text-xl font-medium tracking-[-0.02em] text-navy-800">
+                            Hush &amp; Co
                         </span>
-                    </div>
+                    </Link>
                     <h2 className="font-playfair text-3xl font-medium text-navy-900 mb-1">
                         {mode === 'register'
                             ? 'Buat akun baru'

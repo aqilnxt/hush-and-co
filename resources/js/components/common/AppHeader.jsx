@@ -47,35 +47,36 @@ export default function AppHeader({
     }, [notificationOpen, onCloseNotifications]);
 
     return (
-        <header className="bg-white border-b border-cream-300 px-5 h-[90px] flex items-center gap-3 lg:justify-between sticky top-0 z-30 shadow-sm">
-            <div className="flex items-center gap-3 min-w-0 h-full">
+        <header className="bg-white border-b border-cream-300 px-4 sm:px-6 h-[90px] flex items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <button
                     type="button"
                     onClick={onOpenSidebar}
-                    className="lg:hidden w-11 h-11 rounded-2xl bg-white border border-cream-200 text-navy-700 flex items-center justify-center transition hover:border-navy-300"
+                    className="lg:hidden w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white border border-cream-200 text-navy-700 flex items-center justify-center transition hover:border-navy-300 shrink-0"
                     aria-label="Open sidebar"
                 >
-                    <Bars3Icon className="w-6 h-6" />
+                    <Bars3Icon className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
                 </button>
                 <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-[0.22em] text-navy-500 font-medium truncate leading-tight">
+                    <p className="hidden md:block text-[10px] sm:text-xs uppercase tracking-[0.22em] text-navy-500 font-medium truncate leading-tight mb-0.5">
                         {subtitle}
                     </p>
-                    <h1 className="text-lg sm:text-xl font-semibold text-navy-900 truncate leading-tight">
+                    <h1 className="text-base sm:text-lg md:text-xl font-semibold text-navy-900 truncate leading-tight">
                         {title}
                     </h1>
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 justify-end">
+            <div className="flex items-center gap-2 sm:gap-3 justify-end shrink-0">
                 {showSearch && (
                     <button
                         type="button"
                         onClick={onOpenSearch}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-cream-200 bg-white px-4 py-3 text-sm font-medium text-navy-700 hover:border-navy-300 transition"
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cream-200 bg-white p-2.5 sm:px-4 sm:py-3 text-sm font-medium text-navy-700 hover:border-navy-300 transition"
+                        title={searchLabel}
                     >
                         <MagnifyingGlassIcon className="w-5 h-5" />
-                        {searchLabel}
+                        <span className="hidden sm:inline">{searchLabel}</span>
                     </button>
                 )}
 
