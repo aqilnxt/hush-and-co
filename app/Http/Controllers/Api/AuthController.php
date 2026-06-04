@@ -108,7 +108,7 @@ class AuthController extends Controller
         $request->validate([
             'name'   => 'required|string|max:255',
             'email'  => 'required|email|unique:users,email,' . $user->id,
-            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp',
         ]);
 
         if ($request->hasFile('avatar')) {

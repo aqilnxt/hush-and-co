@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LandingProfileDropdown from '../components/common/LandingProfileDropdown';
-import api from '../api/axios';
+import api, { backendBaseUrl } from '../api/axios';
 import {
     ArrowRightIcon,
     ArrowRightOnRectangleIcon,
@@ -36,9 +36,35 @@ const useReveal = () => {
 export default function Landing() {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const cardName = user ? (user.name.split(' ')[0] || user.name) : 'Aqil';
+    const cardPoints = user ? (user.points ?? 0) : 530;
+    const progressCount = user ? (user.points % 10) : 7;
+    const remaining = 10 - progressCount;
     const [scrolled, setScrolled] = useState(false);
     const [loading, setLoading] = useState(true);
     const [menuItems, setMenuItems] = useState([]);
+    const [galleryItems, setGalleryItems] = useState([]);
+
+    const galleryGridClasses = [
+        "relative col-span-2 row-span-2 overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] min-h-[400px] lg:min-h-0",
+        "relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-auto",
+        "relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-auto",
+        "relative col-span-2 overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-64"
+    ];
+
+    const getImageUrl = (url) => {
+        if (!url) return '';
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+        if (url.startsWith('/')) {
+            return `${backendBaseUrl}${url}`;
+        }
+        if (url.startsWith('storage/')) {
+            return `${backendBaseUrl}/${url}`;
+        }
+        return `${backendBaseUrl}/storage/${url}`;
+    };
     const [menuStats, setMenuStats] = useState({
         total: '12+',
         available: '0',
@@ -198,13 +224,14 @@ export default function Landing() {
     }, []);
 
     useEffect(() => {
-        const fetchMenu = async () => {
+        const fetchMenuAndGallery = async () => {
             try {
-                const [menuRes, categoryRes] = await Promise.all([
+                const [menuRes, categoryRes, galleryRes] = await Promise.all([
                     api.get('/menus', {
                         params: { paginate: true, per_page: 100 },
                     }),
                     api.get('/categories'),
+                    api.get('/gallery'),
                 ]);
 
                 const menus = Array.isArray(menuRes.data?.data)
@@ -224,13 +251,14 @@ export default function Landing() {
                         menus.filter((m) => m.is_available).length,
                     categoryCount: categoryRes.data?.data?.length ?? 0,
                 });
+                setGalleryItems(galleryRes.data?.data || []);
             } catch (err) {
                 // keep fallback menu
             } finally {
                 setLoading(false);
             }
         };
-        fetchMenu();
+        fetchMenuAndGallery();
     }, []);
 
     const handleOrderNow = () => {
@@ -486,9 +514,9 @@ export default function Landing() {
                         <div className="relative flex items-center justify-center">
                             <div className="w-full max-w-[420px] rounded-[40px] border border-white/10 bg-navy-900 shadow-[0_40px_80px_rgba(0,0,0,0.35)] overflow-hidden">
                                 <div className="relative h-[520px] bg-[linear-gradient(180deg,#1f3253_0%,#111827_100%)] p-8">
-                                    <div className="absolute inset-0 bg-[url('/images/hero-lifestyle-placeholder.jpg')] bg-cover bg-center opacity-80" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 via-transparent to-transparent" />
-                                    <div className="relative h-full rounded-[32px] border border-white/10 bg-black/10 backdrop-blur-sm" />
+                                    <div className="absolute inset-0 bg-[url('/images/hush-co-lifestyle.png')] bg-cover bg-center opacity-100" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-navy-900/10 via-transparent to-transparent" />
+                                    <div className="relative h-full rounded-[32px] border border-white/10 bg-black/5" />
                                 </div>
                                 <div className="bg-navy-800/90 px-8 py-6">
                                     <p className="text-sm uppercase tracking-[0.3em] text-cream-400">
@@ -580,7 +608,7 @@ export default function Landing() {
                         </div>
                         <div className="relative overflow-hidden rounded-[40px] bg-navy-900 shadow-[0_40px_80px_rgba(14,26,46,0.22)]">
                             <div className="aspect-[3/4] bg-[linear-gradient(180deg,#1c2b49_0%,#101821_100%)] p-8">
-                                <div className="relative h-full rounded-[32px] border border-white/10 bg-[url('/images/about-placeholder.jpg')] bg-cover bg-center">
+                                <div className="relative h-full rounded-[32px] border border-white/10 bg-[url('/images/hush-co-about.png')] bg-cover bg-center">
                                     <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 via-transparent to-transparent" />
                                 </div>
                             </div>
@@ -634,9 +662,18 @@ export default function Landing() {
                                 : menuCards.map((item, index) => (
                                       <article
                                           key={item.id || index}
-                                          className="group rounded-[32px] border border-white/10 bg-navy-900 p-6 transition duration-300 hover:-translate-y-2 hover:border-cream-400/20"
+                                          onClick={() => navigate('/menu')}
+                                          className="group cursor-pointer rounded-[32px] border border-white/10 bg-navy-900 p-6 transition duration-300 hover:-translate-y-2 hover:border-cream-400/20"
                                       >
-                                          <div className="mb-6 h-52 overflow-hidden rounded-[28px] bg-gradient-to-br from-navy-800 via-navy-700 to-navy-600" />
+                                          <div className="mb-6 h-52 overflow-hidden rounded-[28px] bg-gradient-to-br from-navy-800 via-navy-700 to-navy-600">
+                                              {item.image ? (
+                                                  <img
+                                                      src={getImageUrl(item.image)}
+                                                      alt={item.name}
+                                                      className="h-full w-full object-cover"
+                                                  />
+                                              ) : null}
+                                          </div>
                                           <div className="mb-4 inline-flex rounded-full border border-cream-300/20 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.2em] text-cream-300">
                                               {item.category?.name ||
                                                   menuBadges[index] ||
@@ -783,34 +820,64 @@ export default function Landing() {
                             </p>
                         </div>
                         <div className="grid gap-6 lg:grid-cols-4 lg:grid-rows-2">
-                            <div className="relative col-span-2 row-span-2 overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] min-h-[400px] lg:min-h-0">
-                                <div className="absolute inset-0 bg-[url('/images/gallery-1.jpg')] bg-cover bg-center opacity-80" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
-                                <p className="absolute bottom-6 left-6 text-sm italic text-cream-200/80">
-                                    Ruang utama & jendela besar
-                                </p>
-                            </div>
-                            <div className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-auto">
-                                <div className="absolute inset-0 bg-[url('/images/gallery-2.jpg')] bg-cover bg-center opacity-80" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
-                                <p className="absolute bottom-6 left-6 text-sm italic text-cream-200/80">
-                                    Bar counter
-                                </p>
-                            </div>
-                            <div className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-auto">
-                                <div className="absolute inset-0 bg-[url('/images/gallery-3.jpg')] bg-cover bg-center opacity-80" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
-                                <p className="absolute bottom-6 left-6 text-sm italic text-cream-200/80">
-                                    Pojok kerja
-                                </p>
-                            </div>
-                            <div className="relative col-span-2 overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-64">
-                                <div className="absolute inset-0 bg-[url('/images/gallery-4.jpg')] bg-cover bg-center opacity-80" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
-                                <p className="absolute bottom-6 left-6 text-sm italic text-cream-200/80">
-                                    Outdoor terrace
-                                </p>
-                            </div>
+                            {galleryItems.length > 0 ? (
+                                [0, 1, 2, 3].map((idx) => {
+                                    const item = galleryItems[idx];
+                                    const gridClass = galleryGridClasses[idx];
+                                    if (!item) {
+                                        return (
+                                            <div key={`placeholder-${idx}`} className={gridClass}>
+                                                <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <div key={item.id} className={gridClass}>
+                                            <div 
+                                                className="absolute inset-0 bg-cover bg-center opacity-80 animate-reveal" 
+                                                style={{ backgroundImage: `url(${getImageUrl(item.image_url)})` }}
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
+                                            {item.title && (
+                                                <p className="absolute bottom-6 left-6 text-sm italic text-cream-200/80">
+                                                    {item.title}
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <>
+                                    <div className="relative col-span-2 row-span-2 overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] min-h-[400px] lg:min-h-0">
+                                        <div className="absolute inset-0 bg-[url('/images/gallery-1.jpg')] bg-cover bg-center opacity-80" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
+                                        <p className="absolute bottom-6 left-6 text-sm italic text-cream-200/80">
+                                            Ruang utama & jendela besar
+                                        </p>
+                                    </div>
+                                    <div className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-auto">
+                                        <div className="absolute inset-0 bg-[url('/images/gallery-2.jpg')] bg-cover bg-center opacity-80" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
+                                        <p className="absolute bottom-6 left-6 text-sm italic text-cream-200/80">
+                                            Bar counter
+                                        </p>
+                                    </div>
+                                    <div className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-auto">
+                                        <div className="absolute inset-0 bg-[url('/images/gallery-3.jpg')] bg-cover bg-center opacity-80" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
+                                        <p className="absolute bottom-6 left-6 text-sm italic text-cream-200/80">
+                                            Pojok kerja
+                                        </p>
+                                    </div>
+                                    <div className="relative col-span-2 overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-64">
+                                        <div className="absolute inset-0 bg-[url('/images/gallery-4.jpg')] bg-cover bg-center opacity-80" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
+                                        <p className="absolute bottom-6 left-6 text-sm italic text-cream-200/80">
+                                            Outdoor terrace
+                                        </p>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </section>
@@ -861,7 +928,7 @@ export default function Landing() {
                                         Loyalty Card
                                     </p>
                                     <p className="text-sm font-medium">
-                                        7 / 10
+                                        {progressCount} / 10
                                     </p>
                                 </div>
                                 <div className="flex items-center justify-between rounded-[32px] bg-white/10 p-6">
@@ -870,11 +937,11 @@ export default function Landing() {
                                             Member
                                         </p>
                                         <p className="mt-2 text-2xl font-semibold text-cream-100">
-                                            Aqil
+                                            {cardName}
                                         </p>
                                     </div>
                                     <p className="text-3xl font-semibold text-cream-100">
-                                        530 pts
+                                        {cardPoints} pts
                                     </p>
                                 </div>
                                 <div className="mt-10 grid grid-cols-10 gap-3">
@@ -882,7 +949,7 @@ export default function Landing() {
                                         (_, idx) => (
                                             <span
                                                 key={idx}
-                                                className={`h-3 rounded-full ${idx < 7 ? 'bg-cream-400' : 'bg-cream-100/30'}`}
+                                                className={`h-3 rounded-full ${idx < progressCount ? 'bg-cream-400' : 'bg-cream-100/30'}`}
                                             />
                                         ),
                                     )}
@@ -890,21 +957,26 @@ export default function Landing() {
                             </div>
                             <div className="rounded-[32px] border border-navy-200/40 bg-white p-6">
                                 <p className="text-sm text-navy-500">
-                                    3 transaksi lagi menuju kopi gratis!
+                                    {remaining > 0 
+                                        ? `${remaining} poin lagi menuju kopi gratis!`
+                                        : 'Selamat! Kamu berhak mendapatkan 1 kopi gratis!'}
                                 </p>
                                 <div className="mt-5 h-4 overflow-hidden rounded-full bg-navy-100">
-                                    <div className="h-full w-[70%] rounded-full bg-navy-900 transition-all duration-300" />
+                                    <div 
+                                        className="h-full bg-navy-900 transition-all duration-300" 
+                                        style={{ width: `${progressCount * 10}%` }}
+                                    />
                                 </div>
                                 <p className="mt-3 text-sm text-navy-700">
-                                    Progress: 7/10
+                                    Progress: {progressCount}/10
                                 </p>
                             </div>
                             <button
                                 type="button"
-                                onClick={() => navigate('/menu')}
-                                className="rounded-full bg-navy-900 px-8 py-4 text-sm font-semibold text-cream-100 transition hover:bg-navy-800"
+                                onClick={() => navigate(user ? '/menu' : '/register')}
+                                className="w-full rounded-full bg-navy-900 px-8 py-4 text-sm font-semibold text-cream-100 transition hover:bg-navy-800"
                             >
-                                Daftar sekarang untuk mulai kumpulkan poin
+                                {user ? 'Pesan Sekarang & Kumpulkan Poin' : 'Daftar sekarang untuk mulai kumpulkan poin'}
                             </button>
                         </div>
                     </div>
@@ -915,37 +987,41 @@ export default function Landing() {
                         {serviceTypes.map((service) => (
                             <div
                                 key={service.id}
-                                className="rounded-[32px] border border-cream-300 bg-white p-10 transition hover:shadow-md"
+                                className={`h-full rounded-[32px] border p-10 transition ${service.id === 'dinein' ? 'border-cream-300 bg-white text-navy-900 hover:shadow-xl' : 'border-navy-600 bg-navy-900 text-cream-100 shadow-[0_24px_60px_rgba(8,15,32,0.18)]'}`}
                             >
-                                <div className="inline-flex items-center gap-3 text-xs uppercase tracking-[0.24em] text-navy-500 mb-6">
-                                    <span className="block h-px w-12 bg-navy-500" />
-                                    {service.tag}
+                                <div className="flex h-full flex-col justify-between">
+                                    <div>
+                                        <div className={`inline-flex items-center gap-3 text-xs uppercase tracking-[0.24em] mb-6 ${service.id === 'dinein' ? 'text-navy-500' : 'text-cream-300'}`}>
+                                            <span className={`block h-px w-12 ${service.id === 'dinein' ? 'bg-navy-500' : 'bg-cream-300'}`} />
+                                            {service.tag}
+                                        </div>
+                                        <h3 className="font-playfair text-3xl font-medium mb-4">
+                                            {service.title}
+                                        </h3>
+                                        <p className={`text-sm leading-relaxed mb-8 ${service.id === 'dinein' ? 'text-navy-600' : 'text-cream-200'}`}>
+                                            {service.desc}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (service.id === 'dinein') {
+                                                navigate('/menu?type=dinein');
+                                            } else {
+                                                navigate('/menu?type=takeaway');
+                                            }
+                                        }}
+                                        className="w-full rounded-full bg-cream-100 px-5 py-4 text-sm font-semibold text-navy-900 transition hover:bg-cream-200"
+                                    >
+                                        {service.cta}
+                                    </button>
                                 </div>
-                                <h3 className="font-playfair text-3xl font-medium text-navy-900 mb-4">
-                                    {service.title}
-                                </h3>
-                                <p className="text-sm leading-relaxed text-navy-600 mb-8">
-                                    {service.desc}
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (service.id === 'dinein') {
-                                            navigate('/menu?type=dinein');
-                                        } else {
-                                            navigate('/menu?type=takeaway');
-                                        }
-                                    }}
-                                    className="text-sm font-semibold text-navy-900 hover:underline"
-                                >
-                                    {service.cta}
-                                </button>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                <section className="reveal bg-cream-200 py-24 lg:py-32">
+                <section className="reveal bg-white py-24 lg:py-32">
                     <div className="max-w-7xl mx-auto px-6 lg:px-12">
                         <div className="text-center mb-14">
                             <span className="text-xs uppercase tracking-[0.24em] text-navy-500">
@@ -959,14 +1035,16 @@ export default function Landing() {
                             {testimonials.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="group rounded-[32px] border border-navy-200/30 bg-white p-8 transition hover:border-cream-400 hover:shadow-xl"
+                                    className="group flex h-full flex-col justify-between rounded-[32px] border border-navy-200/30 bg-white p-8 transition hover:border-cream-400 hover:shadow-xl"
                                 >
-                                    <div className="mb-5 text-cream-600">
-                                        ★★★★★
+                                    <div>
+                                        <div className="mb-5 text-navy-900">
+                                            ★★★★★
+                                        </div>
+                                        <p className="text-lg italic text-navy-900 leading-relaxed mb-8">
+                                            “{item.quote}”
+                                        </p>
                                     </div>
-                                    <p className="text-lg italic text-navy-900 leading-relaxed mb-8">
-                                        “{item.quote}”
-                                    </p>
                                     <div className="flex items-center gap-4">
                                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-navy-900 text-cream-100 font-semibold">
                                             {item.initials}
@@ -988,7 +1066,7 @@ export default function Landing() {
 
                 <section
                     id="location-section"
-                    className="reveal bg-cream-200 py-24 lg:py-32"
+                    className="reveal bg-cream-100 py-24 lg:py-32"
                 >
                     <div className="max-w-7xl mx-auto px-6 lg:px-12 grid gap-16 lg:grid-cols-[1fr_0.95fr] items-center">
                         <div className="space-y-8">

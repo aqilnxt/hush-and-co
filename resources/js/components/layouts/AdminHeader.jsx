@@ -170,24 +170,25 @@ export default function AdminHeader({
                 >
                     <Bars3Icon className="w-6 h-6" />
                 </button>
-                <div>
-                    <p className="text-xs text-navy-500 uppercase tracking-[.22em] font-medium">
+                <div className="min-w-0">
+                    <p className="hidden md:block text-[10px] sm:text-xs uppercase tracking-[.22em] text-navy-500 font-medium truncate leading-tight mb-0.5">
                         {subtitle}
                     </p>
-                    <h2 className="text-lg sm:text-xl font-semibold text-navy-900">
+                    <h2 className="text-base sm:text-lg md:text-xl font-semibold text-navy-900 truncate leading-tight">
                         {title}
                     </h2>
                 </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 justify-end shrink-0">
                 <button
                     type="button"
                     onClick={onOpenSearch}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-cream-200 bg-white px-4 py-3 text-sm font-medium text-navy-700 hover:border-navy-300 transition"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cream-200 bg-white p-2.5 sm:px-4 sm:py-3 text-sm font-medium text-navy-700 hover:border-navy-300 transition"
+                    title="Cari"
                 >
                     <MagnifyingGlassIcon className="w-5 h-5" />
-                    Cari
+                    <span className="hidden sm:inline">Cari</span>
                 </button>
                 
                 {headerActions}

@@ -45,7 +45,7 @@ export default function LandingProfileDropdown({
     const initial = firstName.charAt(0).toUpperCase();
 
     return (
-        <div ref={ref} className="relative inline-block w-full">
+        <div ref={ref} className="relative inline-block">
             <button
                 type="button"
                 onClick={() => setOpen((value) => !value)}

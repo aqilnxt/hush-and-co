@@ -72,7 +72,7 @@ class MenuController extends Controller
             'name'         => 'required|string|max:255',
             'description'  => 'nullable|string',
             'price'        => 'required|integer|min:0',
-            'image'        => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'image'        => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
             'is_available' => 'boolean',
         ]);
 
@@ -102,7 +102,7 @@ class MenuController extends Controller
             'name'         => 'sometimes|string|max:255',
             'description'  => 'nullable|string',
             'price'        => 'sometimes|integer|min:0',
-            'image'        => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'image'        => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
             'is_available' => 'sometimes|boolean',
         ]);
 

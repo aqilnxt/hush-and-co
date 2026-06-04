@@ -15,7 +15,7 @@ import {
     EyeSlashIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import api from '../../api/axios';
+import api, { backendBaseUrl } from '../../api/axios';
 
 
 export default function MenuManager() {
@@ -151,8 +151,8 @@ export default function MenuManager() {
             return;
         }
 
-        if (file.size > 2 * 1024 * 1024) {
-            toast.error('Ukuran gambar tidak boleh lebih dari 2MB!');
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error('Ukuran gambar tidak boleh lebih dari 10MB!');
             return;
         }
 
@@ -395,7 +395,7 @@ export default function MenuManager() {
                                             <div className="flex items-center gap-3">
                                                 {menu.image ? (
                                                     <img
-                                                        src={`http://localhost:8000/storage/${menu.image}`}
+                                                        src={`${backendBaseUrl}/storage/${menu.image}`}
                                                         alt={menu.name}
                                                         className="w-10 h-10 object-cover rounded-xl border border-cream-300 shadow-sm shrink-0"
                                                     />
@@ -593,7 +593,7 @@ export default function MenuManager() {
                                             />
                                         ) : editTarget?.image ? (
                                             <img
-                                                src={`http://localhost:8000/storage/${editTarget.image}`}
+                                                src={`${backendBaseUrl}/storage/${editTarget.image}`}
                                                 alt={form.name}
                                                 className="w-full h-full object-cover"
                                             />

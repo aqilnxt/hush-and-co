@@ -41,6 +41,26 @@ export default function Profile() {
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
     const [errors, setErrors] = useState({});
+    const [pointLogs, setPointLogs] = useState([]);
+    const [loadingLogs, setLoadingLogs] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            fetchPointHistory();
+        }
+    }, [user?.id]);
+
+    const fetchPointHistory = async () => {
+        setLoadingLogs(true);
+        try {
+            const res = await api.get('/points/history');
+            setPointLogs(res.data.data);
+        } catch (err) {
+            console.error('Gagal memuat riwayat poin', err);
+        } finally {
+            setLoadingLogs(false);
+        }
+    };
 
     const roleLabel = ROLE_LABELS[user?.role] || 'User';
     const createdAt = useMemo(
@@ -443,6 +463,41 @@ export default function Profile() {
                                     </p>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Riwayat Poin */}
+                        <div className="rounded-[40px] border border-cream-300 bg-white p-6 shadow-sm">
+                            <div className="flex items-center gap-3 text-navy-900 mb-6">
+                                <span className="text-xl">✨</span>
+                                <p className="text-sm font-semibold">Riwayat Poin Loyalitas</p>
+                            </div>
+                            {loadingLogs ? (
+                                <div className="py-8 flex justify-center">
+                                    <div className="w-5 h-5 border-2 border-navy-800 border-t-transparent rounded-full animate-spin" />
+                                </div>
+                            ) : pointLogs.length === 0 ? (
+                                <div className="py-8 text-center text-xs text-navy-400 font-medium">
+                                    Belum ada riwayat poin. Poin akan masuk setelah pesanan selesai dan lunas.
+                                </div>
+                            ) : (
+                                <div className="space-y-4 max-h-72 overflow-y-auto pr-2 divide-y divide-cream-100">
+                                    {pointLogs.map((log) => (
+                                        <div key={log.id} className="flex justify-between items-center text-xs pt-3 first:pt-0">
+                                            <div>
+                                                <p className="font-semibold text-navy-800">
+                                                    {log.type === 'earn' ? '☕ Dapatkan Poin' : '🛍️ Tukarkan Poin'}
+                                                </p>
+                                                <p className="text-navy-400 mt-1">
+                                                    Order #HSH-{String(log.order_id).padStart(4, '0')} · {new Date(log.created_at).toLocaleDateString('id', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                </p>
+                                            </div>
+                                            <span className={`font-bold text-sm ${log.points_change > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                {log.points_change > 0 ? `+${log.points_change}` : log.points_change} pts
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

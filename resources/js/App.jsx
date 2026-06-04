@@ -44,6 +44,7 @@ import CategoryManager from './pages/admin/CategoryManager';
 import TableManager from './pages/admin/TableManager';
 import UserManager from './pages/admin/UserManager';
 import Reports from './pages/admin/Reports';
+import AdminGallery from './pages/admin/Gallery';
 import DashboardLayout from './layouts/DashboardLayout';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
@@ -280,6 +281,7 @@ function AppRoutes() {
                 <Route path="tables" element={<TableManager />} />
                 <Route path="users" element={<UserManager />} />
                 <Route path="reports" element={<Reports />} />
+                <Route path="gallery" element={<AdminGallery />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="settings" element={<Settings />} />
             </Route>

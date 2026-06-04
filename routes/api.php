@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\GalleryItemController;
 
 // ── PUBLIC ROUTES ──
 Route::prefix('auth')->group(function () {
@@ -23,6 +24,7 @@ Route::get('/tables',                  [TableController::class, 'index']);
 Route::get('/tables/number/{number}',  [TableController::class, 'findByNumber']);
 Route::get('/tables/{id}',             [TableController::class, 'show']);
 Route::post('/orders',                 [OrderController::class, 'store']);
+Route::get('/gallery',                 [GalleryItemController::class, 'index']);
 
 // ── PROTECTED ROUTES ──
 Route::middleware('auth:sanctum')->group(function () {
@@ -46,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Orders (customer)
     Route::get('/orders',      [OrderController::class, 'index']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
+    Route::get('/points/history', [OrderController::class, 'pointHistory']);
 
     // Orders (staff & admin)
     Route::get('/staff/orders',             [OrderController::class, 'staffOrders']);
@@ -68,4 +71,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/users',        [UserController::class, 'index']);
     Route::post('/admin/users',       [UserController::class, 'store']);
     Route::put('/admin/users/{id}',   [UserController::class, 'update']);
+
+    // Gallery (admin)
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/gallery',         [GalleryItemController::class, 'adminIndex']);
+        Route::post('/admin/gallery',        [GalleryItemController::class, 'store']);
+        Route::put('/admin/gallery/{id}',    [GalleryItemController::class, 'update']);
+        Route::delete('/admin/gallery/{id}', [GalleryItemController::class, 'destroy']);
+    });
 });

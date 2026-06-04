@@ -7,7 +7,7 @@ import {
     ArrowLeftOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import api from '../../api/axios';
+import api, { backendBaseUrl } from '../../api/axios';
 
 export default function Menu() {
     // --- Data & State ---
@@ -277,7 +277,7 @@ export default function Menu() {
                                             <div className="relative h-40 w-full overflow-hidden bg-cream-100 flex items-center justify-center text-5xl">
                                                 {menu.image ? (
                                                     <img
-                                                        src={`http://localhost:8000/storage/${menu.image}`}
+                                                        src={`${backendBaseUrl}/storage/${menu.image}`}
                                                         alt={menu.name}
                                                         className="w-full h-full object-cover"
                                                     />

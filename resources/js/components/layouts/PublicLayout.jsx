@@ -162,7 +162,7 @@ export default function PublicLayout() {
         <div className="min-h-screen bg-cream-100 text-navy-900 font-sans">
             <Outlet />
 
-            <footer className="bg-cream-100 text-navy-900 py-16">
+            <footer className="bg-cream-100 text-navy-900 pt-16">
                 <div className="max-w-7xl mx-auto px-6 lg:px-12 grid gap-10 lg:grid-cols-4">
                     <div className="space-y-6">
                         <Link

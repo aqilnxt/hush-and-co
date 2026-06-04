@@ -15,6 +15,7 @@ import {
     DocumentChartBarIcon,
     TagIcon,
     UserCircleIcon,
+    PhotoIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -304,6 +305,12 @@ export default function AdminLayout() {
             active: location.pathname === '/admin/reports',
         },
         {
+            path: '/admin/gallery',
+            label: 'Galeri',
+            icon: PhotoIcon,
+            active: location.pathname === '/admin/gallery',
+        },
+        {
             path: '/admin/profile',
             label: 'Profil',
             icon: UserCircleIcon,
@@ -335,6 +342,10 @@ export default function AdminLayout() {
         '/admin/reports': {
             title: 'Laporan',
             subtitle: 'Pantau performa bisnis dan laporan',
+        },
+        '/admin/gallery': {
+            title: 'Kelola Galeri',
+            subtitle: 'Atur foto suasana kafe di landing page',
         },
         '/admin/profile': {
             title: 'Profil',

@@ -14,14 +14,21 @@ import { useAuth } from '../../context/AuthContext';
 export default function Checkout() {
     const [loading, setLoading] = useState(false);
     const [order, setOrder] = useState(null);
+    const [usePoints, setUsePoints] = useState(false);
 
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
     const navigate = useNavigate();
 
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     const orderInfo = JSON.parse(localStorage.getItem('orderInfo') || '{}');
     const tableNumber = orderInfo.tableNumber || orderInfo.tableId || '';
     const subtotal = cart.reduce((a, c) => a + c.price * c.qty, 0);
+
+    const maxPointsPossible = Math.floor(subtotal / 1000);
+    const pointsAvailable = user?.points || 0;
+    const pointsToUse = usePoints ? Math.min(pointsAvailable, maxPointsPossible) : 0;
+    const pointsDiscount = pointsToUse * 1000;
+    const finalTotal = subtotal - pointsDiscount;
 
     useEffect(() => {
         // Don't redirect if order was just placed successfully
@@ -56,6 +63,7 @@ export default function Checkout() {
                     quantity: c.qty,
                     notes: null,
                 })),
+                use_points: usePoints,
             };
 
             if (orderInfo.orderType === 'dine-in') {
@@ -66,6 +74,14 @@ export default function Checkout() {
 
             const res = await api.post('/orders', payload);
             setOrder(res.data.data);
+
+            // Update user points state in context
+            if (res.data.data && user && pointsToUse > 0) {
+                setUser({
+                    ...user,
+                    points: Math.max(0, user.points - pointsToUse),
+                });
+            }
 
             localStorage.removeItem('cart');
             localStorage.removeItem('orderInfo');
@@ -308,6 +324,32 @@ export default function Checkout() {
                                     <CheckCircleIcon className="w-5 h-5 text-navy-800 shrink-0" />
                                 </div>
                             </div>
+
+                            {/* Poin Loyalitas */}
+                            {user && user.points > 0 && (
+                                <div className="bg-white border border-cream-300 rounded-2xl md:rounded-3xl p-4 md:p-6 shadow-sm">
+                                    <h3 className="font-playfair text-base md:text-lg font-medium text-navy-900 mb-4 flex items-center gap-2">
+                                        <span className="text-xl">✨</span>
+                                        Poin Loyalitas
+                                    </h3>
+                                    <div className="flex items-center justify-between p-4 rounded-xl border border-cream-200 bg-cream-50/50">
+                                        <div className="flex-1 min-w-0 pr-3">
+                                            <p className="text-sm font-semibold text-navy-900">
+                                                Gunakan Poin Loyalitas
+                                            </p>
+                                            <p className="text-xs text-navy-400 mt-1 leading-relaxed">
+                                                Kamu memiliki {user.points} poin. Gunakan {pointsToUse} poin untuk mendapatkan potongan Rp {pointsDiscount.toLocaleString('id')}.
+                                            </p>
+                                        </div>
+                                        <input
+                                            type="checkbox"
+                                            checked={usePoints}
+                                            onChange={(e) => setUsePoints(e.target.checked)}
+                                            className="w-5 h-5 rounded border-cream-300 text-navy-800 focus:ring-navy-800 cursor-pointer shrink-0"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* RIGHT – Ringkasan & Konfirmasi */}
@@ -352,13 +394,29 @@ export default function Checkout() {
                                         ))}
                                     </div>
 
-                                    <div className="border-t border-cream-200 pt-4 flex justify-between items-center">
-                                        <span className="text-xs md:text-sm font-semibold text-navy-900">
-                                            Total
-                                        </span>
-                                        <span className="text-lg md:text-xl font-bold text-navy-900">
-                                            Rp {subtotal.toLocaleString('id')}
-                                        </span>
+                                    <div className="border-t border-cream-200 pt-4 space-y-2">
+                                        <div className="flex justify-between items-center text-xs md:text-sm">
+                                            <span className="text-navy-400">Subtotal</span>
+                                            <span className="text-navy-800 font-medium">
+                                                Rp {subtotal.toLocaleString('id')}
+                                            </span>
+                                        </div>
+                                        {pointsDiscount > 0 && (
+                                            <div className="flex justify-between items-center text-xs md:text-sm text-green-600">
+                                                <span>Diskon Poin</span>
+                                                <span className="font-medium">
+                                                    − Rp {pointsDiscount.toLocaleString('id')}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div className="border-t border-cream-100 pt-2 flex justify-between items-center">
+                                            <span className="text-xs md:text-sm font-bold text-navy-900">
+                                                Total Akhir
+                                            </span>
+                                            <span className="text-lg md:text-xl font-bold text-navy-900">
+                                                Rp {finalTotal.toLocaleString('id')}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <button

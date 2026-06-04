@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Menu;
 use App\Models\Table;
+use App\Models\User;
+use App\Models\PointLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -65,6 +67,7 @@ class OrderController extends Controller
             'items.*.menu_id'  => 'required|exists:menus,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.notes'    => 'nullable|string',
+            'use_points'  => 'nullable|boolean',
         ]);
 
 
@@ -95,9 +98,28 @@ class OrderController extends Controller
                 ];
             }
 
+            // Hitung potongan poin jika diaktifkan
+            $user = $request->user('sanctum') ?: $request->user();
+            $pointsUsed = 0;
+
+            if ($request->use_points && $user) {
+                $user = User::findOrFail($user->id);
+                if ($user->points > 0) {
+                    // 1 poin = Rp 1.000 diskon
+                    // Maksimum poin yang bisa digunakan dibatasi total harga / 1000
+                    $maxPointsPossible = floor($totalPrice / 1000);
+                    $pointsUsed = min($user->points, $maxPointsPossible);
+
+                    if ($pointsUsed > 0) {
+                        $user->decrement('points', $pointsUsed);
+                        $totalPrice -= ($pointsUsed * 1000);
+                    }
+                }
+            }
+
             // Buat order
             $order = Order::create([
-                'user_id'        => optional($request->user('sanctum') ?: $request->user())->id,
+                'user_id'        => $user ? $user->id : null,
                 'table_id'       => $request->order_type === 'dine-in'
                     ? $request->table_id : null,
                 'order_type'     => $request->order_type,
@@ -106,8 +128,18 @@ class OrderController extends Controller
                 'status'         => 'pending',
                 'payment_status' => 'unpaid',
                 'total_price'    => $totalPrice,
-                'points_used'    => 0,
+                'points_used'    => $pointsUsed,
             ]);
+
+            // Buat log penukaran poin
+            if ($pointsUsed > 0) {
+                PointLog::create([
+                    'user_id'       => $user->id,
+                    'order_id'      => $order->id,
+                    'points_change' => -$pointsUsed,
+                    'type'          => 'redeem',
+                ]);
+            }
 
             // Buat order items
             foreach ($orderItems as $item) {
@@ -159,6 +191,9 @@ class OrderController extends Controller
                 ->update(['status' => 'available']);
         }
 
+        // Berikan poin jika pesanan selesai dan sudah lunas
+        $this->checkAndAwardPoints($order);
+
         return response()->json([
             'message' => 'Status order berhasil diupdate!',
             'data'    => $order,
@@ -177,6 +212,9 @@ class OrderController extends Controller
         }
 
         $order->update(['payment_status' => 'paid']);
+
+        // Berikan poin jika pesanan selesai dan sudah lunas
+        $this->checkAndAwardPoints($order);
 
         return response()->json([
             'message' => 'Pembayaran berhasil dikonfirmasi!',
@@ -205,5 +243,69 @@ class OrderController extends Controller
         return response()->json([
             'data' => $orders
         ]);
+    }
+
+    // GET /api/points/history — riwayat poin customer
+    public function pointHistory(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $logs = PointLog::with(['order'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'data' => $logs
+        ]);
+    }
+
+    /**
+     * Award points to the user if the order is completed and paid.
+     * Award ratio: 1 point for every Rp 10.000 spent.
+     */
+    private function checkAndAwardPoints(Order $order)
+    {
+        if (!$order->user_id) {
+            return;
+        }
+
+        // Segarkan data pesanan untuk memastikan status terkini
+        $order->refresh();
+
+        // Poin hanya diberikan jika pesanan SELESAI dan LUNAS (paid)
+        if ($order->status !== 'selesai' || $order->payment_status !== 'paid') {
+            return;
+        }
+
+        // Hindari double crediting: cek apakah point log earn untuk order ini sudah ada
+        $alreadyEarned = PointLog::where('order_id', $order->id)
+            ->where('type', 'earn')
+            ->exists();
+
+        if ($alreadyEarned) {
+            return;
+        }
+
+        // Hitung poin yang didapatkan (1 poin per Rp 10.000)
+        $pointsEarned = floor($order->total_price / 10000);
+
+        if ($pointsEarned > 0) {
+            $user = User::find($order->user_id);
+            if ($user) {
+                $user->increment('points', $pointsEarned);
+
+                // Buat log riwayat
+                PointLog::create([
+                    'user_id'       => $user->id,
+                    'order_id'      => $order->id,
+                    'points_change' => $pointsEarned,
+                    'type'          => 'earn',
+                ]);
+            }
+        }
     }
 }
