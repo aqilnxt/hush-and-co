@@ -11,6 +11,7 @@ import {
     ArrowRightIcon,
     ArrowPathIcon,
 } from '@heroicons/react/24/outline';
+import GoogleLogo from '../../components/common/GoogleLogo';
 
 export default function Register() {
     const [form, setForm] = useState({
@@ -25,6 +26,12 @@ export default function Register() {
 
     const { register } = useAuth();
     const navigate = useNavigate();
+
+    const handleGoogleRegister = () => {
+        toast.error(
+            'Pendaftaran via Google sementara dinonaktifkan. Silakan gunakan email/password.',
+        );
+    };
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -50,10 +57,13 @@ export default function Register() {
             navigate('/menu');
         } catch (err) {
             const errors = err.response?.data?.errors;
+            const message = err.response?.data?.message;
             if (errors) {
                 Object.values(errors)
                     .flat()
                     .forEach((msg) => toast.error(msg));
+            } else if (message) {
+                toast.error(message);
             } else {
                 toast.error('Registrasi gagal!');
             }
@@ -63,290 +73,167 @@ export default function Register() {
     };
 
     return (
-        <div className="min-h-screen bg-navy-900 flex">
-            {/* LEFT PANEL – Visual Branding (Desktop) */}
-            <div className="hidden lg:flex w-[45%] relative bg-navy-800 overflow-hidden">
-                {/* Gambar suasana coffee shop */}
-                <img
-                    src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1200&h=1600&fit=crop"
-                    alt="Cozy coffee shop"
-                    className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-900/95 via-navy-900/50 to-transparent"></div>
+        <form
+            onSubmit={handleSubmit}
+            className="space-y-5 bg-white rounded-3xl p-8 shadow-xl"
+        >
+            <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-navy-800">
+                    Nama Lengkap
+                </label>
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <UserIcon className="w-5 h-5 text-navy-400" />
+                    </div>
+                    <input
+                        name="name"
+                        type="text"
+                        value={form.name}
+                        onChange={handleChange}
+                        placeholder="Ahmad Fauzi"
+                        required
+                        className="w-full pl-11 pr-4 py-3 bg-cream-50 border border-cream-300 rounded-2xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 placeholder-navy-200 transition"
+                    />
+                </div>
+            </div>
 
-                {/* Konten panel kiri */}
-                <div className="relative z-10 flex flex-col justify-between p-12 w-full h-full">
-                    <span className="font-playfair text-xl font-medium text-cream-200">
-                        Hush <span className="text-cream-600">&</span> Co.
+            <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-navy-800">
+                    Email
+                </label>
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <EnvelopeIcon className="w-5 h-5 text-navy-400" />
+                    </div>
+                    <input
+                        name="email"
+                        type="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        placeholder="kamu@email.com"
+                        required
+                        className="w-full pl-11 pr-4 py-3 bg-cream-50 border border-cream-300 rounded-2xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 placeholder-navy-200 transition"
+                    />
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-navy-800">
+                    Password
+                </label>
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <LockClosedIcon className="w-5 h-5 text-navy-400" />
+                    </div>
+                    <input
+                        name="password"
+                        type={showPass ? 'text' : 'password'}
+                        value={form.password}
+                        onChange={handleChange}
+                        placeholder="Min. 8 karakter"
+                        required
+                        className="w-full pl-11 pr-12 py-3 bg-cream-50 border border-cream-300 rounded-2xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 placeholder-navy-200 transition"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPass(!showPass)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer text-navy-400 hover:text-navy-800 transition-colors"
+                        title={
+                            showPass
+                                ? 'Sembunyikan password'
+                                : 'Tampilkan password'
+                        }
+                    >
+                        {showPass ? (
+                            <EyeSlashIcon className="w-5 h-5" />
+                        ) : (
+                            <EyeIcon className="w-5 h-5" />
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-navy-800">
+                    Konfirmasi Password
+                </label>
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <LockClosedIcon className="w-5 h-5 text-navy-400" />
+                    </div>
+                    <input
+                        name="password_confirmation"
+                        type={showPassConfirm ? 'text' : 'password'}
+                        value={form.password_confirmation}
+                        onChange={handleChange}
+                        placeholder="Ulangi password"
+                        required
+                        className="w-full pl-11 pr-12 py-3 bg-cream-50 border border-cream-300 rounded-2xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 placeholder-navy-200 transition"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassConfirm(!showPassConfirm)}
+                        className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer text-navy-400 hover:text-navy-800 transition-colors"
+                        title={
+                            showPassConfirm
+                                ? 'Sembunyikan password'
+                                : 'Tampilkan password'
+                        }
+                    >
+                        {showPassConfirm ? (
+                            <EyeSlashIcon className="w-5 h-5" />
+                        ) : (
+                            <EyeIcon className="w-5 h-5" />
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 bg-navy-800 text-cream-100 rounded-full font-bold hover:bg-navy-900 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+                {loading ? (
+                    <>
+                        <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                        <span>Membuat akun...</span>
+                    </>
+                ) : (
+                    <>
+                        <span>Buat Akun</span>
+                        <ArrowRightIcon className="w-5 h-5" />
+                    </>
+                )}
+            </button>
+
+            <div className="flex flex-col gap-3 mt-5">
+                <button
+                    type="button"
+                    onClick={handleGoogleRegister}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-cream-300 bg-white hover:bg-cream-200 transition-colors font-medium text-sm text-navy-800"
+                >
+                    <GoogleLogo className="h-5 w-5" />
+                    Daftar dengan Google
+                </button>
+                <div className="flex items-center gap-3">
+                    <div className="h-px bg-cream-200 flex-1" />
+                    <span className="text-xs uppercase tracking-widest text-navy-400">
+                        atau
                     </span>
-
-                    <div className="max-w-md">
-                        <p className="text-cream-400 text-xs font-medium tracking-widest uppercase mb-5">
-                            — Join us
-                        </p>
-                        <h2 className="font-playfair text-4xl font-medium text-white mb-4 leading-tight">
-                            Start your{' '}
-                            <em className="italic text-cream-400">journey</em>{' '}
-                            with us.
-                        </h2>
-                        <p className="text-white/70 text-sm leading-relaxed">
-                            Daftar dan mulai nikmati pengalaman memesan di Hush
-                            & Co. — lebih mudah, lebih menyenangkan.
-                        </p>
-
-                        {/* Social proof */}
-                        <div className="flex items-center gap-4 mt-8">
-                            <div className="flex -space-x-3">
-                                <img
-                                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
-                                    className="size-10 rounded-full border-2 border-navy-800 object-cover"
-                                    alt=""
-                                />
-                                <img
-                                    src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop"
-                                    className="size-10 rounded-full border-2 border-navy-800 object-cover"
-                                    alt=""
-                                />
-                                <img
-                                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
-                                    className="size-10 rounded-full border-2 border-navy-800 object-cover"
-                                    alt=""
-                                />
-                                <div className="size-10 rounded-full border-2 border-navy-800 bg-white flex items-center justify-center text-xs font-bold text-navy-800">
-                                    +1k
-                                </div>
-                            </div>
-                            <span className="text-sm font-medium text-white/80">
-                                Ribuan pelanggan setia
-                            </span>
-                        </div>
-                    </div>
-
-                    <p className="font-playfair italic text-cream-400 text-sm">
-                        "A quiet place to think, sip & stay."
-                    </p>
+                    <div className="h-px bg-cream-200 flex-1" />
                 </div>
             </div>
 
-            {/* RIGHT PANEL – Form Register */}
-            <div className="flex-1 flex items-center justify-center p-8 bg-cream-100">
-                <div className="w-full max-w-md">
-                    {/* Logo mobile */}
-                    <div className="lg:hidden text-center mb-8">
-                        <span className="font-playfair text-2xl font-medium text-navy-800">
-                            Hush <span className="text-cream-600">&</span> Co.
-                        </span>
-                    </div>
-
-                    <h2 className="font-playfair text-3xl font-medium text-navy-900 mb-1">
-                        Buat <em className="italic text-cream-600">akun</em>{' '}
-                        baru
-                    </h2>
-                    <p className="text-navy-400 text-sm mb-8">
-                        Daftar dan mulai nikmati pengalaman memesan di Hush &
-                        Co.
-                    </p>
-
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Nama Lengkap */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-semibold text-navy-800">
-                                Nama Lengkap
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <UserIcon className="w-5 h-5 text-navy-400" />
-                                </div>
-                                <input
-                                    name="name"
-                                    type="text"
-                                    value={form.name}
-                                    onChange={handleChange}
-                                    placeholder="Ahmad Fauzi"
-                                    required
-                                    className="w-full pl-11 pr-4 py-3 bg-white border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 placeholder-navy-200 transition"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Email */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-semibold text-navy-800">
-                                Email
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <EnvelopeIcon className="w-5 h-5 text-navy-400" />
-                                </div>
-                                <input
-                                    name="email"
-                                    type="email"
-                                    value={form.email}
-                                    onChange={handleChange}
-                                    placeholder="kamu@email.com"
-                                    required
-                                    className="w-full pl-11 pr-4 py-3 bg-white border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 placeholder-navy-200 transition"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Password */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-semibold text-navy-800">
-                                Password
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <LockClosedIcon className="w-5 h-5 text-navy-400" />
-                                </div>
-                                <input
-                                    name="password"
-                                    type={showPass ? 'text' : 'password'}
-                                    value={form.password}
-                                    onChange={handleChange}
-                                    placeholder="Min. 8 karakter"
-                                    required
-                                    className="w-full pl-11 pr-12 py-3 bg-white border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 placeholder-navy-200 transition"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPass(!showPass)}
-                                    className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer text-navy-400 hover:text-navy-800 transition-colors"
-                                    title={
-                                        showPass
-                                            ? 'Sembunyikan password'
-                                            : 'Tampilkan password'
-                                    }
-                                >
-                                    {showPass ? (
-                                        <EyeSlashIcon className="w-5 h-5" />
-                                    ) : (
-                                        <EyeIcon className="w-5 h-5" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Konfirmasi Password */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-semibold text-navy-800">
-                                Konfirmasi Password
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <LockClosedIcon className="w-5 h-5 text-navy-400" />
-                                </div>
-                                <input
-                                    name="password_confirmation"
-                                    type={showPassConfirm ? 'text' : 'password'}
-                                    value={form.password_confirmation}
-                                    onChange={handleChange}
-                                    placeholder="Ulangi password"
-                                    required
-                                    className="w-full pl-11 pr-12 py-3 bg-white border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 placeholder-navy-200 transition"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setShowPassConfirm(!showPassConfirm)
-                                    }
-                                    className="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer text-navy-400 hover:text-navy-800 transition-colors"
-                                    title={
-                                        showPassConfirm
-                                            ? 'Sembunyikan password'
-                                            : 'Tampilkan password'
-                                    }
-                                >
-                                    {showPassConfirm ? (
-                                        <EyeSlashIcon className="w-5 h-5" />
-                                    ) : (
-                                        <EyeIcon className="w-5 h-5" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Submit button */}
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full py-3.5 bg-navy-800 text-cream-200 rounded-full font-bold hover:bg-navy-900 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            {loading ? (
-                                <>
-                                    <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                                    <span>Membuat akun...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span>Buat Akun</span>
-                                    <ArrowRightIcon className="w-5 h-5" />
-                                </>
-                            )}
-                        </button>
-                    </form>
-
-                    {/* Divider & SSO alternatives */}
-                    <div className="flex items-center gap-4 my-8">
-                        <div className="h-px bg-cream-300 flex-1"></div>
-                        <span className="text-xs font-medium text-navy-400 uppercase tracking-wider">
-                            Atau lanjutkan dengan
-                        </span>
-                        <div className="h-px bg-cream-300 flex-1"></div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <button
-                            type="button"
-                            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-cream-300 bg-white hover:bg-cream-200 transition-colors cursor-pointer font-medium text-sm text-navy-800"
-                        >
-                            {/* Google icon */}
-                            <svg className="size-5" viewBox="0 0 24 24">
-                                <path
-                                    fill="#4285F4"
-                                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                                />
-                                <path
-                                    fill="#34A853"
-                                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                                />
-                                <path
-                                    fill="#FBBC05"
-                                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                                />
-                                <path
-                                    fill="#EA4335"
-                                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                                />
-                            </svg>
-                            Google
-                        </button>
-                        <button
-                            type="button"
-                            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-cream-300 bg-white hover:bg-cream-200 transition-colors cursor-pointer font-medium text-sm text-navy-800"
-                        >
-                            {/* Microsoft icon */}
-                            <svg className="size-5" viewBox="0 0 23 23">
-                                <path fill="#f35325" d="M1 1h10v10H1z" />
-                                <path fill="#81bc06" d="M12 1h10v10H12z" />
-                                <path fill="#05a6f0" d="M1 12h10v10H1z" />
-                                <path fill="#ffba08" d="M12 12h10v10H12z" />
-                            </svg>
-                            Microsoft
-                        </button>
-                    </div>
-
-                    <p className="text-center text-sm text-navy-400 mt-8">
-                        Sudah punya akun?{' '}
-                        <Link
-                            to="/login"
-                            className="text-navy-800 font-medium border-b border-navy-200 hover:border-navy-800 transition"
-                        >
-                            Masuk di sini
-                        </Link>
-                    </p>
-                </div>
-            </div>
-        </div>
+            <p className="text-center text-sm text-navy-400 mt-8">
+                Sudah punya akun?{' '}
+                <Link
+                    to="/login"
+                    className="text-navy-800 font-medium border-b border-navy-200 hover:border-navy-800 transition"
+                >
+                    Masuk di sini
+                </Link>
+            </p>
+        </form>
     );
 }

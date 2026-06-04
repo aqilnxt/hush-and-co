@@ -12,53 +12,77 @@ class UserSeeder extends Seeder
     {
         // Admin
         User::create([
-            'name'     => 'Admin Hush',
-            'email'    => 'admin@hushandco.id',
-            'password' => Hash::make('password'),
-            'role'     => 'admin',
-            'points'   => 0,
+            'name'        => 'Admin Hush',
+            'email'       => 'admin@hushandco.id',
+            'password'    => Hash::make('password'),
+            'role'        => 'admin',
+            'points'      => 0,
+            'provider'    => 'local',
+            'provider_id' => null,
+            'avatar'      => null,
+            'google_id'   => null,
         ]);
 
         // Staff
         User::create([
-            'name'     => 'Rizky Barista',
-            'email'    => 'rizky@hushandco.id',
-            'password' => Hash::make('password'),
-            'role'     => 'staff',
-            'points'   => 0,
+            'name'        => 'Rizky Barista',
+            'email'       => 'rizky@hushandco.id',
+            'password'    => Hash::make('password'),
+            'role'        => 'staff',
+            'points'      => 0,
+            'provider'    => 'local',
+            'provider_id' => null,
+            'avatar'      => null,
+            'google_id'   => null,
         ]);
 
         User::create([
-            'name'     => 'Farah Staff',
-            'email'    => 'farah@hushandco.id',
-            'password' => Hash::make('password'),
-            'role'     => 'staff',
-            'points'   => 0,
+            'name'        => 'Farah Staff',
+            'email'       => 'farah@hushandco.id',
+            'password'    => Hash::make('password'),
+            'role'        => 'staff',
+            'points'      => 0,
+            'provider'    => 'local',
+            'provider_id' => null,
+            'avatar'      => null,
+            'google_id'   => null,
         ]);
 
         // Customers
         User::create([
-            'name'     => 'Ahmad Fauzi',
-            'email'    => 'ahmad@email.com',
-            'password' => Hash::make('password'),
-            'role'     => 'customer',
-            'points'   => 150,
+            'name'        => 'Ahmad Fauzi',
+            'email'       => 'ahmad@email.com',
+            'password'    => Hash::make('password'),
+            'role'        => 'customer',
+            'points'      => 150,
+            'provider'    => 'local',
+            'provider_id' => null,
+            'avatar'      => null,
+            'google_id'   => null,
         ]);
 
         User::create([
-            'name'     => 'Sari Wulandari',
-            'email'    => 'sari@email.com',
-            'password' => Hash::make('password'),
-            'role'     => 'customer',
-            'points'   => 80,
+            'name'        => 'Sari Wulandari',
+            'email'       => 'sari@email.com',
+            'password'    => Hash::make('password'),
+            'role'        => 'customer',
+            'points'      => 80,
+            'provider'    => 'local',
+            'provider_id' => null,
+            'avatar'      => null,
+            'google_id'   => null,
         ]);
 
         User::create([
-            'name'     => 'Dika Ramadhan',
-            'email'    => 'dika@email.com',
-            'password' => Hash::make('password'),
-            'role'     => 'customer',
-            'points'   => 320,
+            'name'        => 'Dika Ramadhan',
+            'email'       => 'dika@email.com',
+            'password'    => Hash::make('password'),
+            'role'        => 'customer',
+            'points'      => 320,
+            'provider'    => 'local',
+            'provider_id' => null,
+            'avatar'      => null,
+            'google_id'   => null,
         ]);
     }
 }

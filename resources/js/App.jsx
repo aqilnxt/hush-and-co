@@ -13,7 +13,11 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import api from './api/axios';
 
 // Layouts
-import DashboardLayout from './layouts/DashboardLayout';
+import PublicLayout from './components/layouts/PublicLayout';
+import AuthLayout from './components/layouts/AuthLayout';
+import CustomerLayout from './components/layouts/CustomerLayout';
+import StaffLayout from './components/layouts/StaffLayout';
+import AdminLayout from './components/layouts/AdminLayout';
 
 // Auth Pages
 import Login from './pages/auth/Login';
@@ -28,6 +32,7 @@ import Cart from './pages/customer/Cart';
 import Checkout from './pages/customer/Checkout';
 import Orders from './pages/customer/Orders';
 import OrderDetail from './pages/customer/OrderDetail';
+import OAuthCallback from './pages/auth/OAuthCallback';
 
 // Staff Pages
 import StaffDashboard from './pages/staff/Dashboard';
@@ -35,9 +40,13 @@ import StaffDashboard from './pages/staff/Dashboard';
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
 import MenuManager from './pages/admin/MenuManager';
+import CategoryManager from './pages/admin/CategoryManager';
 import TableManager from './pages/admin/TableManager';
 import UserManager from './pages/admin/UserManager';
 import Reports from './pages/admin/Reports';
+import DashboardLayout from './layouts/DashboardLayout';
+import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 
 // Icons for navigation
 import {
@@ -56,7 +65,7 @@ function homeRouteForRole(role) {
     return '/menu';
 }
 
-function ProtectedRoute({ children, roles }) {
+function ProtectedRoute({ children, roles, loginPath = '/login' }) {
     const { user, loading } = useAuth();
 
     if (loading)
@@ -66,7 +75,7 @@ function ProtectedRoute({ children, roles }) {
             </div>
         );
 
-    if (!user) return <Navigate to="/login" replace />;
+    if (!user) return <Navigate to={loginPath} replace />;
 
     if (roles && !roles.includes(user.role)) {
         return <Navigate to={homeRouteForRole(user.role)} replace />;
@@ -102,21 +111,20 @@ function QrOrderRedirect() {
                     pickupName: null,
                 };
                 localStorage.setItem('orderInfo', JSON.stringify(orderInfo));
-                localStorage.setItem('nextRoute', '/cart');
-                if (user) {
-                    navigate('/cart', { replace: true });
-                } else {
-                    navigate('/login', { replace: true });
-                }
+                navigate('/cart', { replace: true });
             })
             .catch(() => {
                 // Table not found – still go to cart so user can pick manually
-                localStorage.setItem('nextRoute', '/cart');
-                if (user) {
-                    navigate('/cart', { replace: true });
-                } else {
-                    navigate('/login', { replace: true });
-                }
+                localStorage.setItem(
+                    'orderInfo',
+                    JSON.stringify({
+                        orderType: 'dine-in',
+                        tableId: null,
+                        tableNumber: null,
+                        pickupName: null,
+                    }),
+                );
+                navigate('/cart', { replace: true });
             });
     }, [searchParams, user, navigate]);
 
@@ -201,122 +209,81 @@ function AdminDashboardLayout() {
     );
 }
 
-// Staff Dashboard Layout Wrapper
-function StaffDashboardLayout() {
-    const location = useLocation();
-    const navItems = [
-        {
-            path: '/staff',
-            label: 'Order Queue',
-            icon: QueueListIcon,
-            active: location.pathname === '/staff',
-        },
-    ];
-
-    const routeMeta = {
-        '/staff': {
-            title: 'Live Order Dashboard',
-            subtitle: 'Kelola order masuk secara realtime',
-        },
-    };
-
-    const { title, subtitle } =
-        routeMeta[location.pathname] || routeMeta['/staff'];
-
-    return (
-        <DashboardLayout
-            title={title}
-            subtitle={subtitle}
-            navItems={navItems}
-            searchItems={[]}
-            showSearch={true}
-            showTime={true}
-        />
-    );
-}
-
 function AppRoutes() {
     const { user } = useAuth();
 
     return (
         <Routes>
-            {/* Public */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/order" element={<QrOrderRedirect />} />
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<PublicLayout />}>
+                <Route index element={<Landing />} />
+                <Route path="order" element={<QrOrderRedirect />} />
+            </Route>
 
-            {/* Customer */}
-            <Route
-                path="/menu"
-                element={
-                    <ProtectedRoute roles={['customer']}>
-                        <Menu />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/cart"
-                element={
-                    <ProtectedRoute roles={['customer']}>
-                        <Cart />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/checkout"
-                element={
-                    <ProtectedRoute roles={['customer']}>
-                        <Checkout />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/orders"
-                element={
-                    <ProtectedRoute roles={['customer']}>
-                        <Orders />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/orders/:id"
-                element={
-                    <ProtectedRoute roles={['customer']}>
-                        <OrderDetail />
-                    </ProtectedRoute>
-                }
-            />
+            <Route path="/" element={<AuthLayout />}>
+                <Route path="login" element={<Login variant="customer" />} />
+                <Route path="staff/login" element={<Login variant="staff" />} />
+                <Route path="admin/login" element={<Login variant="admin" />} />
+                <Route path="register" element={<Register />} />
+                <Route path="oauth-success" element={<OAuthCallback />} />
+            </Route>
 
-            {/* Staff Dashboard */}
+            <Route path="/" element={<CustomerLayout />}>
+                <Route path="menu" element={<Menu />} />
+                <Route path="cart" element={<Cart />} />
+                <Route path="checkout" element={<Checkout />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="orders">
+                    <Route
+                        index
+                        element={
+                            <ProtectedRoute roles={['customer']}>
+                                <Orders />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path=":id"
+                        element={
+                            <ProtectedRoute roles={['customer']}>
+                                <OrderDetail />
+                            </ProtectedRoute>
+                        }
+                    />
+                </Route>
+            </Route>
+
             <Route
                 path="/staff"
                 element={
                     <ProtectedRoute roles={['staff']}>
-                        <StaffDashboardLayout />
+                        <StaffLayout />
                     </ProtectedRoute>
                 }
             >
                 <Route index element={<StaffDashboard />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="settings" element={<Settings />} />
             </Route>
 
-            {/* Admin Dashboard */}
             <Route
                 path="/admin"
                 element={
                     <ProtectedRoute roles={['admin']}>
-                        <AdminDashboardLayout />
+                        <AdminLayout />
                     </ProtectedRoute>
                 }
             >
                 <Route index element={<AdminDashboard />} />
                 <Route path="menus" element={<MenuManager />} />
+                <Route path="categories" element={<CategoryManager />} />
                 <Route path="tables" element={<TableManager />} />
                 <Route path="users" element={<UserManager />} />
                 <Route path="reports" element={<Reports />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="settings" element={<Settings />} />
             </Route>
 
-            {/* Fallback */}
             <Route
                 path="*"
                 element={

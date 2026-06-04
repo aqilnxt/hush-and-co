@@ -1,4 +1,6 @@
 <IfModule mod_rewrite.c>
+    # Serve custom favicon from favicon_io if present
+    RewriteRule ^favicon\.ico$ /favicon_io/favicon.ico [L]
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>

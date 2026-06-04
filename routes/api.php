@@ -22,6 +22,7 @@ Route::get('/menus/{id}',              [MenuController::class, 'show']);
 Route::get('/tables',                  [TableController::class, 'index']);
 Route::get('/tables/number/{number}',  [TableController::class, 'findByNumber']);
 Route::get('/tables/{id}',             [TableController::class, 'show']);
+Route::post('/orders',                 [OrderController::class, 'store']);
 
 // ── PROTECTED ROUTES ──
 Route::middleware('auth:sanctum')->group(function () {
@@ -29,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/profile', [AuthController::class, 'profile']);
+    Route::put('/auth/profile', [AuthController::class, 'update']);
 
     // Category (admin)
     Route::post('/categories',        [CategoryController::class, 'store']);
@@ -44,7 +46,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // Orders (customer)
     Route::get('/orders',      [OrderController::class, 'index']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
-    Route::post('/orders',     [OrderController::class, 'store']);
 
     // Orders (staff & admin)
     Route::get('/staff/orders',             [OrderController::class, 'staffOrders']);

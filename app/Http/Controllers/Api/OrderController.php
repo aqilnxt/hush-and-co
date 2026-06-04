@@ -49,6 +49,14 @@ class OrderController extends Controller
     // POST /api/orders — buat order baru (customer)
     public function store(Request $request)
     {
+        // Resolve table_number to table_id if it's non-numeric
+        if ($request->order_type === 'dine-in' && $request->table_id && !is_numeric($request->table_id)) {
+            $table = Table::where('table_number', $request->table_id)->first();
+            if ($table) {
+                $request->merge(['table_id' => $table->id]);
+            }
+        }
+
         $request->validate([
             'order_type'  => 'required|in:dine-in,takeaway',
             'table_id'    => 'required_if:order_type,dine-in|nullable|integer|exists:tables,id',
@@ -58,6 +66,7 @@ class OrderController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.notes'    => 'nullable|string',
         ]);
+
 
         // Pakai DB transaction biar aman
         $order = DB::transaction(function () use ($request) {
@@ -88,7 +97,7 @@ class OrderController extends Controller
 
             // Buat order
             $order = Order::create([
-                'user_id'        => $request->user()->id,
+                'user_id'        => optional($request->user('sanctum') ?: $request->user())->id,
                 'table_id'       => $request->order_type === 'dine-in'
                     ? $request->table_id : null,
                 'order_type'     => $request->order_type,

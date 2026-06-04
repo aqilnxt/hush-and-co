@@ -17,6 +17,10 @@ class User extends Authenticatable
         'password',
         'role',
         'points',
+        'provider',
+        'provider_id',
+        'avatar',
+        'google_id',
     ];
 
     protected $hidden = [

@@ -35,6 +35,7 @@ export default function StaffDashboard() {
 
     const [filter, setFilter] = useState('all'); // 'all' | 'dinein' | 'takeaway'
     const [search, setSearch] = useState('');
+    const [searchModalOpen, setSearchModalOpen] = useState(false);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
@@ -45,7 +46,9 @@ export default function StaffDashboard() {
 
     const [time, setTime] = useState(new Date());
     const searchInputRef = useRef(null);
+    const searchModalInputRef = useRef(null);
     const firstLoad = useRef(true);
+    const ordersRef = useRef([]);
 
     // =========================
     // FETCH ORDERS
@@ -65,14 +68,16 @@ export default function StaffDashboard() {
             const res = await api.get('/staff/orders');
             const newOrders = res.data.data;
             if (!firstLoad.current) {
-                const existingIds = orders.map((o) => o.id);
+                const existingIds = ordersRef.current.map((o) => o.id);
                 const incoming = newOrders.filter(
                     (o) => !existingIds.includes(o.id),
                 );
-                if (incoming.length > 0)
+                if (incoming.length > 0) {
                     toast.success(`${incoming.length} order baru masuk 🔥`);
+                }
             }
             firstLoad.current = false;
+            ordersRef.current = newOrders;
             setOrders(newOrders);
         } catch (err) {
             toast.error('Gagal memuat order');
@@ -131,7 +136,13 @@ export default function StaffDashboard() {
     // SHORTCUT Ctrl+K
     // =========================
     const openSearch = useCallback(() => {
-        searchInputRef.current?.focus();
+        setSearchModalOpen(true);
+        setTimeout(() => searchModalInputRef.current?.focus(), 20);
+    }, []);
+
+    const closeSearchModal = useCallback(() => {
+        setSearchModalOpen(false);
+        setSearch('');
     }, []);
 
     useEffect(() => {
@@ -141,13 +152,17 @@ export default function StaffDashboard() {
                 openSearch();
             }
             if (e.key === 'Escape') {
-                setSearch('');
-                searchInputRef.current?.blur();
+                if (searchModalOpen) {
+                    closeSearchModal();
+                } else {
+                    setSearch('');
+                    searchInputRef.current?.blur();
+                }
             }
         };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [openSearch]);
+    }, [openSearch, closeSearchModal, searchModalOpen]);
 
     // =========================
     // FILTERING & GROUPING
@@ -160,12 +175,19 @@ export default function StaffDashboard() {
             result = result.filter((o) => o.order_type === 'takeaway');
         if (search) {
             const keyword = search.toLowerCase();
-            result = result.filter(
-                (o) =>
+            result = result.filter((o) => {
+                const orderCode = `#HSH-${String(o.id).padStart(4, '0')}`;
+                const normalizedOrderCode = orderCode.toLowerCase();
+                const normalizedTable = o.table?.table_number?.toString().toLowerCase();
+
+                return (
                     o.pickup_name?.toLowerCase().includes(keyword) ||
-                    o.table?.table_number?.toString().includes(keyword) ||
-                    String(o.id).includes(keyword),
-            );
+                    normalizedTable?.includes(keyword) ||
+                    String(o.id).includes(keyword) ||
+                    normalizedOrderCode.includes(keyword) ||
+                    normalizedOrderCode.replace('#', '').includes(keyword)
+                );
+            });
         }
         return result;
     }, [orders, filter, search]);
@@ -307,17 +329,97 @@ export default function StaffDashboard() {
                     ))}
                 </div>
                 <div className="relative w-full sm:w-72">
-                    <MagnifyingGlassIcon className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-navy-400" />
                     <input
                         ref={searchInputRef}
                         type="text"
                         placeholder="Cari order... (Ctrl+K)"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full bg-white border border-cream-300 rounded-full pl-11 pr-4 py-2.5 text-sm outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
+                        className="w-full bg-white border border-cream-300 rounded-full pl-4 pr-4 py-2.5 text-sm outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
                     />
                 </div>
             </div>
+
+            <AnimatePresence>
+                {searchModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ y: -20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -20, opacity: 0 }}
+                            className="w-full max-w-3xl rounded-3xl bg-white shadow-2xl border border-cream-200 overflow-hidden"
+                        >
+                            <div className="flex items-center justify-between p-5 border-b border-cream-200">
+                                <div>
+                                    <p className="text-xs uppercase tracking-[0.2em] text-navy-400">
+                                        Search orders
+                                    </p>
+                                    <h3 className="text-xl font-semibold text-navy-900">
+                                        Tekan Esc untuk tutup
+                                    </h3>
+                                </div>
+                                <button
+                                    onClick={closeSearchModal}
+                                    className="text-sm font-medium text-navy-500 hover:text-navy-800"
+                                >
+                                    Tutup
+                                </button>
+                            </div>
+                            <div className="p-5">
+                                <div className="relative">
+                                    <MagnifyingGlassIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-navy-400" />
+                                    <input
+                                        ref={searchModalInputRef}
+                                        type="text"
+                                        placeholder="Cari order..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        className="w-full rounded-full border border-cream-300 bg-cream-50 pl-12 pr-4 py-3 text-sm outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
+                                    />
+                                </div>
+                                <div className="mt-5 max-h-80 overflow-y-auto space-y-3">
+                                    {search ? (
+                                        filteredOrders.length > 0 ? (
+                                            filteredOrders.map((order) => (
+                                                <button
+                                                    key={order.id}
+                                                    onClick={closeSearchModal}
+                                                    className="w-full text-left rounded-3xl border border-cream-200 bg-white p-4 hover:bg-navy-50 transition"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-semibold text-navy-900">
+                                                            #{String(order.id).padStart(4, '0')}
+                                                        </span>
+                                                        <span className="text-xs text-navy-400 uppercase">
+                                                            {order.status}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-navy-500 mt-2">
+                                                        {order.pickup_name || `Table ${order.table?.table_number || '-'}`}
+                                                    </p>
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <div className="rounded-3xl border border-cream-200 bg-cream-50 p-5 text-sm text-navy-500">
+                                                Tidak ada order yang cocok.
+                                            </div>
+                                        )
+                                    ) : (
+                                        <div className="rounded-3xl border border-cream-200 bg-cream-50 p-5 text-sm text-navy-500">
+                                            Ketik nomor order, nama pelanggan, atau meja untuk mencari.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Kanban Desktop */}
             <div className="hidden lg:grid grid-cols-3 gap-6">

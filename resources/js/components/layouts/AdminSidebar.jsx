@@ -1,10 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     ArrowLeftOnRectangleIcon,
-    SparklesIcon,
     XMarkIcon,
+    UserCircleIcon,
+    Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
+import ProfileDropdown from '../common/ProfileDropdown';
 
 function renderIcon(icon) {
     if (!icon) return null;
@@ -14,6 +16,8 @@ function renderIcon(icon) {
 }
 
 function AdminSidebar({ sidebarItems, user, isOpen, onClose, onLogout }) {
+    const navigate = useNavigate();
+
     return (
         <aside
             className={`flex flex-col w-[280px] shrink-0 h-screen fixed inset-y-0 left-0 z-50 bg-white border-r border-cream-300 transform transition-transform duration-300 overflow-y-auto shadow-xl lg:shadow-none
@@ -21,8 +25,17 @@ function AdminSidebar({ sidebarItems, user, isOpen, onClose, onLogout }) {
         >
             <div className="flex items-center justify-between border-b border-cream-300 h-[90px] px-5 gap-3 shrink-0">
                 <Link to="/" className="flex items-center gap-3">
-                    <div className="w-11 h-11 bg-navy-800 rounded-xl flex items-center justify-center shadow-sm">
-                        <SparklesIcon className="w-6 h-6 text-cream-200" />
+                    <div className="w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center shadow-sm bg-white">
+                        <img
+                            src="/images/hush-co-logo.png"
+                            alt="Hush & Co"
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.parentElement.innerHTML =
+                                    '<span class="w-full h-full flex items-center justify-center font-playfair text-cream-100">H</span>';
+                            }}
+                        />
                     </div>
                     <h1 className="font-playfair font-bold text-xl text-navy-900 tracking-tight">
                         Hush <span className="text-cream-600">&</span> Co.
@@ -85,28 +98,29 @@ function AdminSidebar({ sidebarItems, user, isOpen, onClose, onLogout }) {
             </div>
 
             <div className="p-5 border-t border-cream-300 bg-white shrink-0">
-                <div className="flex items-center justify-between p-3 rounded-2xl ring-1 ring-cream-300 hover:ring-red-400/50 hover:bg-red-50/50 transition-all duration-300 cursor-pointer">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-navy-800 flex items-center justify-center text-cream-200 font-bold text-sm shrink-0">
-                            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-sm font-bold text-navy-900 truncate">
-                                {user?.name || 'User'}
-                            </p>
-                            <p className="text-xs font-medium text-navy-400 truncate">
-                                {user?.role || 'Admin'}
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={onLogout}
-                        className="w-8 h-8 rounded-xl bg-white flex items-center justify-center hover:bg-red-50 transition-colors"
-                        title="Logout"
-                    >
-                        <ArrowLeftOnRectangleIcon className="w-4 h-4 text-navy-400 hover:text-red-500 transition-colors" />
-                    </button>
-                </div>
+                <ProfileDropdown
+                    name={user?.name}
+                    email={user?.email}
+                    role={user?.role}
+                    avatar={user?.avatar}
+                    menuItems={[
+                        {
+                            label: 'Profile',
+                            icon: UserCircleIcon,
+                            onClick: () => navigate('/admin/profile'),
+                        },
+                        {
+                            label: 'Settings',
+                            icon: Cog6ToothIcon,
+                            onClick: () => navigate('/admin/settings'),
+                        },
+                        {
+                            label: 'Logout',
+                            icon: ArrowLeftOnRectangleIcon,
+                            onClick: onLogout,
+                        },
+                    ]}
+                />
             </div>
         </aside>
     );

@@ -9,16 +9,42 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const savedToken = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
-        if (savedUser && token) {
-            setUser(JSON.parse(savedUser));
+
+        if (savedUser) {
+            try {
+                setUser(JSON.parse(savedUser));
+            } catch (e) {
+                localStorage.removeItem('user');
+            }
         }
-        setLoading(false);
+
+        if (!savedToken) {
+            setLoading(false);
+            return;
+        }
+
+        setToken(savedToken);
+
+        // If there's a valid token, refresh profile from API to ensure it's current
+        api.get('/auth/profile')
+            .then((res) => {
+                localStorage.setItem('user', JSON.stringify(res.data.user));
+                setUser(res.data.user);
+            })
+            .catch(() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setToken(null);
+                setUser(null);
+            })
+            .finally(() => setLoading(false));
     }, []);
 
-    const login = async (email, password) => {
-        const res = await api.post('/auth/login', { email, password });
-        const { user, token, role } = res.data;
+    const login = async (email, password, role = null) => {
+        const res = await api.post('/auth/login', { email, password, role });
+        const { user, token, role: returnedRole } = res.data;
 
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
@@ -26,7 +52,7 @@ export function AuthProvider({ children }) {
         setToken(token);
         setUser(user);
 
-        return role;
+        return returnedRole;
     };
 
     const register = async (name, email, password, passwordConfirmation) => {
@@ -43,6 +69,8 @@ export function AuthProvider({ children }) {
 
         setToken(token);
         setUser(user);
+
+        return user.role;
     };
 
     const logout = async () => {
@@ -59,7 +87,7 @@ export function AuthProvider({ children }) {
 
     return (
         <AuthContext.Provider
-            value={{ user, token, loading, login, register, logout }}
+            value={{ user, setUser, token, loading, login, register, logout }}
         >
             {children}
         </AuthContext.Provider>
@@ -67,5 +95,5 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-    return useContext(AuthContext); 
+    return useContext(AuthContext);
 }

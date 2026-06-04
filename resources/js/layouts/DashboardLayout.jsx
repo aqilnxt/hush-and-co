@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    ChevronDownIcon,
     Bars3Icon,
     XCircleIcon,
     ArrowRightOnRectangleIcon,
     UserCircleIcon,
+    Cog6ToothIcon,
     MagnifyingGlassIcon,
-    SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
+import ProfileDropdown from '../components/common/ProfileDropdown';
+import AppHeader from '../components/common/AppHeader';
 
 export default function DashboardLayout({
     title = 'Dashboard',
@@ -20,17 +21,27 @@ export default function DashboardLayout({
     headerActions = null,
     showSearch = true,
     showTime = true,
+    logoPath = '/',
 }) {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [profileOpen, setProfileOpen] = useState(false);
     const [time, setTime] = useState(new Date());
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
-    const profileRef = useRef(null);
     const searchInputRef = useRef(null);
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login', { replace: true });
+    };
+
+    // Determine profile path based on current location
+    const isStaffPath = location.pathname.startsWith('/staff');
+    const profilePath = isStaffPath ? '/staff/profile' : '/profile';
+    const settingsPath = isStaffPath ? '/staff/settings' : '/settings';
 
     // Clock updates
     useEffect(() => {
@@ -45,21 +56,6 @@ export default function DashboardLayout({
         };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    // Click outside profile dropdown
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (
-                profileRef.current &&
-                !profileRef.current.contains(event.target)
-            ) {
-                setProfileOpen(false);
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside);
-        return () =>
-            document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     // Ctrl+K to focus search
@@ -121,11 +117,22 @@ export default function DashboardLayout({
                 {/* Logo */}
                 <div className="flex items-center justify-between border-b border-cream-300 h-[90px] px-5 gap-3 shrink-0">
                     <button
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate(logoPath)}
                         className="flex items-center gap-3 hover:opacity-80 transition"
                     >
                         <div className="w-11 h-11 bg-navy-800 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-                            <SparklesIcon className="w-6 h-6 text-cream-100" />
+                                <div className="w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center shrink-0 shadow-sm bg-white">
+                                    <img
+                                        src="/images/hush-co-logo.png"
+                                        alt="Hush & Co"
+                                        className="h-full w-full object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                            e.currentTarget.parentElement.innerHTML =
+                                                '<span class="w-full h-full flex items-center justify-center font-playfair text-cream-100">H</span>';
+                                        }}
+                                    />
+                                </div>
                         </div>
                         <h1 className="font-playfair font-bold text-xl text-navy-900 tracking-tight">
                             Hush <span className="text-cream-600">&</span> Co.
@@ -173,172 +180,57 @@ export default function DashboardLayout({
                     </div>
                 </div>
 
-                {/* Profile + Logout */}
-                <div
-                    className="p-5 border-t border-cream-300 bg-white shrink-0 relative"
-                    ref={profileRef}
-                >
-                    <button
-                        onClick={() => setProfileOpen(!profileOpen)}
-                        className="w-full flex items-center justify-between p-3 rounded-2xl ring-1 ring-cream-300 hover:ring-navy-400 transition-all"
-                    >
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className="size-10 rounded-full bg-navy-800 text-cream-100 flex items-center justify-center font-bold text-sm">
-                                {user?.name?.charAt(0)?.toUpperCase() || (
-                                    <UserCircleIcon className="w-6 h-6" />
-                                )}
-                            </div>
-                            <div className="min-w-0 text-left">
-                                <p className="text-sm font-bold text-navy-900 truncate">
-                                    {user?.name}
-                                </p>
-                                <p className="text-xs font-medium text-navy-400 truncate">
-                                    {user?.role === 'admin'
-                                        ? 'Admin'
-                                        : user?.role === 'staff'
-                                          ? 'Staff'
-                                          : 'Customer'}
-                                </p>
-                            </div>
-                        </div>
-                        <ChevronDownIcon
-                            className={`w-5 h-5 text-navy-400 transition ${profileOpen ? 'rotate-180' : ''}`}
+                {user && (
+                    <div className="p-5 border-t border-cream-300 bg-white shrink-0">
+                        <ProfileDropdown
+                            name={user.name}
+                            email={user.email}
+                            role={user.role}
+                            avatar={user.avatar}
+                            menuItems={[
+                                {
+                                    label: 'Profile',
+                                    icon: UserCircleIcon,
+                                    onClick: () => navigate(profilePath),
+                                },
+                                {
+                                    label: 'Settings',
+                                    icon: Cog6ToothIcon,
+                                    onClick: () => navigate(settingsPath),
+                                },
+                                {
+                                    label: 'Logout',
+                                    icon: ArrowRightOnRectangleIcon,
+                                    onClick: handleLogout,
+                                },
+                            ]}
                         />
-                    </button>
-
-                    {/* Dropdown */}
-                    <AnimatePresence>
-                        {profileOpen && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                className="absolute bottom-full left-0 right-0 mb-2 rounded-2xl bg-white border border-cream-300 shadow-xl overflow-hidden z-50"
-                            >
-                                <div className="p-4 border-b border-cream-200">
-                                    <p className="text-xs text-navy-400">
-                                        Signed in as
-                                    </p>
-                                    <p className="text-sm mt-1 text-navy-900">
-                                        {user?.email}
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={logout}
-                                    className="w-full flex items-center gap-2 px-4 py-3 hover:bg-cream-100 text-sm text-navy-600"
-                                >
-                                    <ArrowRightOnRectangleIcon className="w-5 h-5" />
-                                    Logout
-                                </button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
+                    </div>
+                )}
             </aside>
 
             {/* ========== MAIN CONTENT ========== */}
             <main className="flex-1 lg:ml-[280px] flex flex-col min-h-screen w-full">
                 {/* Header */}
-                <header className="flex items-center justify-between w-full h-[90px] shrink-0 border-b border-cream-300 bg-white px-5 md:px-8 sticky top-0 z-30">
-                    <div className="flex items-center gap-4 flex-1">
-                        <button
-                            onClick={() => setSidebarOpen(true)}
-                            className="lg:hidden size-11 flex items-center justify-center rounded-xl ring-1 ring-cream-300 hover:ring-navy-800 transition-all"
-                        >
-                            <Bars3Icon className="size-6 text-navy-900" />
-                        </button>
-                        <div className="hidden sm:block">
-                            <h2 className="font-playfair font-bold text-2xl text-navy-900">
-                                {title}
-                            </h2>
-                            {subtitle && (
-                                <p className="text-sm text-navy-400 font-medium">
-                                    {subtitle}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        {showSearch && (
-                            <div className="relative hidden md:block">
-                                <button
-                                    onClick={() =>
-                                        searchInputRef.current?.focus()
-                                    }
-                                    className="size-11 flex items-center justify-center rounded-xl ring-1 ring-cream-300 hover:ring-navy-800 transition-all cursor-pointer bg-cream-100/50"
-                                    title="Search (Ctrl+K)"
-                                >
-                                    <MagnifyingGlassIcon className="size-5 text-navy-900" />
-                                </button>
-
-                                {/* Search Dropdown */}
-                                <AnimatePresence>
-                                    {searchQuery &&
-                                        searchResults.length > 0 && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: 10 }}
-                                                className="absolute top-full right-0 mt-2 w-72 rounded-2xl bg-white border border-cream-300 shadow-lg overflow-hidden z-50"
-                                            >
-                                                <div className="p-3 border-b border-cream-200 text-xs text-navy-400">
-                                                    Search Results
-                                                </div>
-                                                <div className="max-h-96 overflow-y-auto">
-                                                    {searchResults.map(
-                                                        (result, idx) => (
-                                                            <button
-                                                                key={idx}
-                                                                onClick={() =>
-                                                                    handleSearchSelect(
-                                                                        result,
-                                                                    )
-                                                                }
-                                                                className="w-full px-4 py-3 hover:bg-cream-50 text-left border-b border-cream-100 last:border-b-0 transition"
-                                                            >
-                                                                <p className="text-sm font-medium text-navy-900">
-                                                                    {
-                                                                        result.title
-                                                                    }
-                                                                </p>
-                                                                {result.subtitle && (
-                                                                    <p className="text-xs text-navy-400 mt-1">
-                                                                        {
-                                                                            result.subtitle
-                                                                        }
-                                                                    </p>
-                                                                )}
-                                                            </button>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                </AnimatePresence>
-                            </div>
-                        )}
-
-                        <div className="hidden sm:flex items-center gap-2 text-green-600 text-sm bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
-                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            Online
-                        </div>
-
-                        {showTime && (
-                            <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 rounded-full bg-cream-100 border border-cream-300 text-xs text-navy-400">
-                                {time.toLocaleString('id', {
-                                    weekday: 'short',
-                                    day: '2-digit',
-                                    month: 'short',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                })}
-                            </div>
-                        )}
-
-                        {headerActions}
-                    </div>
-                </header>
+                <AppHeader
+                    title={title}
+                    subtitle={subtitle}
+                    onOpenSidebar={() => setSidebarOpen(true)}
+                    showSearch={showSearch}
+                    onOpenSearch={() => searchInputRef.current?.focus()}
+                    searchQuery={searchQuery}
+                    searchResults={searchResults}
+                    onSearchSelect={handleSearchSelect}
+                    headerActions={headerActions}
+                    showTime={showTime}
+                    timeText={time.toLocaleString('id', {
+                        weekday: 'short',
+                        day: '2-digit',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    })}
+                />
 
                 {/* Page Content */}
                 <div className="flex-1 overflow-y-auto">

@@ -1,20 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     ShoppingCartIcon,
     MagnifyingGlassIcon,
-    BellIcon,
-    Bars3Icon,
-    XMarkIcon,
     ArrowRightIcon,
-    HomeIcon,
-    ClipboardDocumentListIcon,
     ArrowLeftOnRectangleIcon,
-    SparklesIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
-import { useAuth } from '../../context/AuthContext';
 
 export default function Menu() {
     // --- Data & State ---
@@ -29,19 +22,11 @@ export default function Menu() {
     const [loading, setLoading] = useState(true);
 
     // UI State
-    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [searchModalOpen, setSearchModalOpen] = useState(false);
     const [globalSearch, setGlobalSearch] = useState('');
     const searchInputRef = useRef(null);
 
-    const { user, logout } = useAuth();
     const navigate = useNavigate();
-
-    // --- Logout ---
-    const handleLogout = async () => {
-        await logout();
-        navigate('/login', { replace: true });
-    };
 
     // --- Fetch Data ---
     useEffect(() => {
@@ -79,28 +64,47 @@ export default function Menu() {
 
     const addToCart = (menu) => {
         if (!menu.is_available) return;
-        setCart((prev) => {
-            const exists = prev.find((c) => c.id === menu.id);
-            if (exists)
-                return prev.map((c) =>
-                    c.id === menu.id ? { ...c, qty: c.qty + 1 } : c,
-                );
-            return [
-                ...prev,
+        const exists = cart.find((c) => c.id === menu.id);
+        let newCart;
+        if (exists) {
+            newCart = cart.map((c) =>
+                c.id === menu.id ? { ...c, qty: c.qty + 1 } : c,
+            );
+        } else {
+            newCart = [
+                ...cart,
                 { id: menu.id, name: menu.name, price: menu.price, qty: 1 },
             ];
-        });
+        }
+        setCart(newCart);
+        try {
+            localStorage.setItem('cart', JSON.stringify(newCart));
+        } catch (e) {}
+        const total = newCart.reduce((a, c) => a + (c.qty || 0), 0);
+        window.dispatchEvent(
+            new CustomEvent('cartchange', { detail: { count: total } }),
+        );
         toast.success(`${menu.name} ditambahkan!`);
     };
 
     const removeFromCart = (id) => {
-        setCart((prev) => {
-            const exists = prev.find((c) => c.id === id);
-            if (exists?.qty === 1) return prev.filter((c) => c.id !== id);
-            return prev.map((c) =>
+        const exists = cart.find((c) => c.id === id);
+        let newCart;
+        if (exists?.qty === 1) {
+            newCart = cart.filter((c) => c.id !== id);
+        } else {
+            newCart = cart.map((c) =>
                 c.id === id ? { ...c, qty: c.qty - 1 } : c,
             );
-        });
+        }
+        setCart(newCart);
+        try {
+            localStorage.setItem('cart', JSON.stringify(newCart));
+        } catch (e) {}
+        const total = newCart.reduce((a, c) => a + (c.qty || 0), 0);
+        window.dispatchEvent(
+            new CustomEvent('cartchange', { detail: { count: total } }),
+        );
     };
 
     const totalItems = cart.reduce((a, c) => a + c.qty, 0);
@@ -130,6 +134,13 @@ export default function Menu() {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [searchModalOpen, openSearchModal, closeSearchModal]);
 
+    useEffect(() => {
+        const handleOpenSearch = () => openSearchModal();
+        window.addEventListener('open-menu-search', handleOpenSearch);
+        return () =>
+            window.removeEventListener('open-menu-search', handleOpenSearch);
+    }, [openSearchModal]);
+
     // Pencarian global
     const globalResults = globalSearch
         ? menus.filter(
@@ -151,195 +162,27 @@ export default function Menu() {
 
     // --- Render ---
     return (
-        <div className="min-h-screen bg-cream-100 flex">
-            {/* Overlay mobile */}
-            {sidebarOpen && (
-                <div
-                    className="fixed inset-0 bg-black/80 z-40 lg:hidden"
-                    onClick={() => setSidebarOpen(false)}
-                />
-            )}
-
-            {/* ========== SIDEBAR (FIXED) ========== */}
-            <aside
-                className={`flex flex-col w-[280px] shrink-0 h-screen fixed inset-y-0 left-0 z-50 bg-white border-r border-cream-300 transform transition-transform duration-300 overflow-y-auto
-                ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
-            >
-                {/* Logo */}
-                <div className="flex items-center justify-between border-b border-cream-300 h-[90px] px-5 gap-3 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 bg-navy-800 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-                            <SparklesIcon className="w-6 h-6 text-cream-200" />
-                        </div>
-                        <h1 className="font-playfair font-bold text-xl text-navy-900 tracking-tight">
-                            Hush <span className="text-cream-600">&</span> Co.
-                        </h1>
-                    </div>
-                    <button
-                        onClick={() => setSidebarOpen(false)}
-                        className="lg:hidden size-11 flex shrink-0 bg-white rounded-xl p-[10px] items-center justify-center ring-1 ring-cream-300 hover:ring-navy-800 transition-all duration-300 cursor-pointer"
-                    >
-                        <XMarkIcon className="size-6 text-navy-400" />
-                    </button>
-                </div>
-
-                {/* Navigasi */}
-                <div className="flex flex-col p-5 gap-6 overflow-y-auto flex-1">
-                    <div className="flex flex-col gap-4">
-                        <h3 className="font-medium text-xs text-navy-400 uppercase tracking-wider px-2">
-                            Main Menu
-                        </h3>
-                        <div className="flex flex-col gap-1">
-                            <Link
-                                to="/dashboard"
-                                className="group cursor-pointer"
-                            >
-                                <div className="flex items-center rounded-2xl p-4 gap-3 bg-white hover:bg-cream-200 transition-all duration-300">
-                                    <HomeIcon className="size-6 text-navy-400 group-hover:text-navy-900 transition-all" />
-                                    <span className="font-medium text-navy-400 group-hover:text-navy-900 transition-all">
-                                        Dashboard
-                                    </span>
-                                </div>
-                            </Link>
-                            <Link
-                                to="/menu"
-                                className="group active cursor-pointer"
-                            >
-                                <div className="flex items-center rounded-2xl p-4 gap-3 bg-cream-200 transition-all duration-300">
-                                    <ClipboardDocumentListIcon className="size-6 text-navy-800" />
-                                    <span className="font-bold text-navy-900">
-                                        Menu
-                                    </span>
-                                </div>
-                            </Link>
-                            <Link to="/orders" className="group cursor-pointer">
-                                <div className="flex items-center rounded-2xl p-4 gap-3 bg-white hover:bg-cream-200 transition-all duration-300">
-                                    <ShoppingCartIcon className="size-6 text-navy-400 group-hover:text-navy-900 transition-all" />
-                                    <span className="font-medium text-navy-400 group-hover:text-navy-900 transition-all">
-                                        Riwayat Pesanan
-                                    </span>
-                                </div>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Profile Card */}
-                <div className="p-5 border-t border-cream-300 bg-white shrink-0">
-                    <div className="flex items-center justify-between p-3 rounded-2xl ring-1 ring-cream-300 hover:ring-red-400/50 hover:bg-red-50/50 transition-all duration-300 cursor-pointer">
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className="size-10 rounded-full bg-navy-800 flex items-center justify-center text-cream-200 font-bold text-sm shrink-0">
-                                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-sm font-bold text-navy-900 truncate">
-                                    {user?.name || 'User'}
-                                </p>
-                                <p className="text-xs font-medium text-navy-400 truncate">
-                                    {user?.role || 'Customer'}
-                                </p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={handleLogout}
-                            className="size-8 rounded-xl bg-white flex items-center justify-center shrink-0 hover:bg-red-50 transition-colors"
-                            title="Logout"
-                        >
-                            <ArrowLeftOnRectangleIcon className="size-4 text-navy-400 hover:text-red-500 transition-colors" />
-                        </button>
-                    </div>
-                </div>
-            </aside>
-
-            {/* ========== MAIN CONTENT (SCROLLABLE) ========== */}
-            <main className="flex-1 lg:ml-[280px] flex flex-col min-h-screen w-full">
-                {/* Header */}
-                <header className="flex items-center justify-between w-full h-[90px] shrink-0 border-b border-cream-300 bg-white px-5 md:px-8 sticky top-0 z-30">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setSidebarOpen(true)}
-                            className="lg:hidden size-11 flex items-center justify-center rounded-xl ring-1 ring-cream-300 hover:ring-navy-800 transition-all duration-300 cursor-pointer"
-                        >
-                            <Bars3Icon className="size-6 text-navy-900" />
-                        </button>
-                        <div>
-                            <h2 className="font-playfair font-bold text-2xl text-navy-900 hidden sm:block">
-                                Menu
-                            </h2>
-                            <p className="text-sm text-navy-400 font-medium hidden sm:block">
-                                Pilih yang terbaik untukmu
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        {/* Tombol Search (Ctrl+K) */}
-                        <button
-                            onClick={openSearchModal}
-                            className="size-11 flex items-center justify-center rounded-xl ring-1 ring-cream-300 hover:ring-navy-800 transition-all duration-300 cursor-pointer bg-cream-100/50"
-                            title="Cari (Ctrl+K)"
-                        >
-                            <MagnifyingGlassIcon className="size-5 text-navy-900" />
-                        </button>
-
-                        {/* Notifikasi */}
-                        <button
-                            className="size-11 flex items-center justify-center rounded-xl ring-1 ring-cream-300 hover:ring-navy-800 transition-all duration-300 cursor-pointer relative bg-cream-100/50"
-                            title="Notifikasi"
-                        >
-                            <BellIcon className="size-5 text-navy-900" />
-                            <span className="absolute top-2 right-2 size-2.5 rounded-full bg-red-500 border-2 border-white" />
-                        </button>
-
-                        {/* Keranjang (mobile) */}
-                        <button
-                            onClick={() => navigate('/cart')}
-                            className="flex sm:hidden items-center justify-center gap-2 px-4 py-2.5 bg-navy-800 text-cream-200 rounded-full font-bold hover:bg-navy-900 transition-all duration-300 cursor-pointer shadow-sm relative"
-                        >
-                            <ShoppingCartIcon className="size-5" />
-                            {totalItems > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-cream-400 text-navy-900 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                                    {totalItems}
-                                </span>
-                            )}
-                        </button>
-
-                        {/* Keranjang (desktop) */}
-                        <button
-                            onClick={() => navigate('/cart')}
-                            className="hidden sm:flex items-center justify-center gap-2 px-5 py-2.5 bg-navy-800 text-cream-200 rounded-full font-bold hover:bg-navy-900 transition-all duration-300 cursor-pointer shadow-sm"
-                        >
-                            <ShoppingCartIcon className="size-5" />
-                            <span>Keranjang</span>
-                            {totalItems > 0 && (
-                                <span className="bg-cream-400 text-navy-900 text-xs font-bold px-2 py-0.5 rounded-full">
-                                    {totalItems}
-                                </span>
-                            )}
-                        </button>
-                    </div>
-                </header>
-
-                {/* Area Konten Scrollable */}
-                <div className="flex-1 overflow-y-auto p-5 md:p-8">
+        <div className="min-h-screen overflow-y-auto bg-cream-100">
+            <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                <div className="flex-1 overflow-y-auto">
                     {/* Banner */}
-                    <div className="bg-navy-800 rounded-3xl px-6 md:px-10 py-10 mb-8 shadow-md">
-                        <p className="text-cream-400 text-xs font-medium tracking-widest uppercase mb-2">
+                    <div className="bg-navy-800 rounded-3xl px-5 py-8 sm:px-8 sm:py-10 mb-8 shadow-md">
+                        <p className="text-cream-400 text-[0.6rem] font-medium tracking-[0.35em] uppercase mb-2">
                             Menu Hush & Co.
                         </p>
-                        <h1 className="font-playfair text-3xl font-medium text-cream-200 mb-2">
+                        <h1 className="font-playfair text-2xl font-semibold text-cream-200 mb-2 sm:text-3xl">
                             Pilih yang{' '}
                             <em className="italic text-cream-400">terbaik</em>{' '}
                             untukmu
                         </h1>
-                        <p className="text-navy-200 text-sm">
+                        <p className="text-cream-200/80 text-sm sm:text-base max-w-xl">
                             Semua dibuat segar setiap hari.
                         </p>
                     </div>
 
-                    <div className="flex gap-8">
+                    <div className="flex flex-col gap-8 lg:flex-row">
                         {/* Sidebar Kategori (desktop) */}
-                        <aside className="hidden md:block w-52 flex-shrink-0">
+                        <aside className="hidden md:block w-52 shrink-0">
                             <p className="text-xs font-semibold tracking-widest uppercase text-navy-400 mb-3">
                                 Kategori
                             </p>
@@ -380,7 +223,7 @@ export default function Menu() {
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Cari menu..."
-                                    className="w-full max-w-sm pl-10 pr-4 py-2.5 bg-white border border-cream-300 rounded-xl text-sm outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 placeholder-navy-200 transition"
+                                    className="w-full max-w-full sm:max-w-sm pl-10 pr-4 py-3 bg-white border border-cream-300 rounded-2xl text-sm outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 placeholder-navy-200 transition"
                                 />
                             </div>
 
@@ -420,7 +263,7 @@ export default function Menu() {
                                     </p>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                                     {filtered.map((menu) => (
                                         <div
                                             key={menu.id}
@@ -442,21 +285,24 @@ export default function Menu() {
                                                     <div
                                                         className={`w-full h-full flex items-center justify-center
                                                         ${
-                                                            menu.category?.slug ===
+                                                            menu.category
+                                                                ?.slug ===
                                                             'signature'
-                                                                ? 'bg-gradient-to-br from-navy-800 to-navy-600 text-cream-200'
+                                                                ? 'bg-linear-to-br from-navy-800 to-navy-600 text-cream-200'
                                                                 : menu.category
                                                                         ?.slug ===
                                                                     'coffee'
-                                                                  ? 'bg-gradient-to-br from-navy-900 to-navy-800 text-cream-200'
-                                                                  : menu.category
+                                                                  ? 'bg-linear-to-br from-navy-900 to-navy-800 text-cream-200'
+                                                                  : menu
+                                                                          .category
                                                                           ?.slug ===
                                                                       'non-coffee'
-                                                                    ? 'bg-gradient-to-br from-navy-600 to-navy-400 text-cream-200'
-                                                                    : 'bg-gradient-to-br from-cream-600 to-cream-400 text-cream-800'
+                                                                    ? 'bg-linear-to-br from-navy-600 to-navy-400 text-cream-200'
+                                                                    : 'bg-linear-to-br from-cream-600 to-cream-400 text-cream-800'
                                                         }`}
                                                     >
-                                                        {menu.category?.icon || '☕'}
+                                                        {menu.category?.icon ||
+                                                            '☕'}
                                                     </div>
                                                 )}
                                                 {!menu.is_available && (
@@ -533,7 +379,7 @@ export default function Menu() {
             {/* ========== SEARCH MODAL (Ctrl+K) ========== */}
             {searchModalOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
+                    className="fixed inset-0 bg-black/50 z-100 flex items-center justify-center p-4 backdrop-blur-sm"
                     onClick={(e) => {
                         if (e.target === e.currentTarget) closeSearchModal();
                     }}

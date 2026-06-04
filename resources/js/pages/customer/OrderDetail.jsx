@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    ArrowLeftIcon,
     ClockIcon,
     CheckCircleIcon,
     XCircleIcon,
@@ -72,28 +71,7 @@ export default function OrderDetail() {
     const StatusIcon = statusConfig[order.status]?.icon;
 
     return (
-        <div className="min-h-screen bg-cream-100 flex flex-col">
-            <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-cream-300 shadow-sm">
-                <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
-                    <button
-                        onClick={() => navigate('/orders')}
-                        className="inline-flex items-center gap-2 text-sm font-medium text-navy-700 hover:text-navy-900 transition"
-                    >
-                        <ArrowLeftIcon className="w-4 h-4" />
-                        Kembali ke Riwayat
-                    </button>
-                    <div className="text-right">
-                        <p className="text-xs uppercase tracking-widest text-navy-400">
-                            Order
-                        </p>
-                        <p className="text-sm font-semibold text-navy-900">
-                            #HSH-{String(order.id).padStart(4, '0')}
-                        </p>
-                    </div>
-                </div>
-            </header>
-
-            <main className="flex-1 max-w-5xl mx-auto w-full px-6 md:px-12 py-10">
+        <main className="max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
                 <div className="bg-white rounded-3xl border border-cream-300 shadow-sm overflow-hidden">
                     <div className="px-6 py-6 sm:px-10 sm:py-8">
                         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
@@ -218,6 +196,5 @@ export default function OrderDetail() {
                     </div>
                 </div>
             </main>
-        </div>
     );
 }

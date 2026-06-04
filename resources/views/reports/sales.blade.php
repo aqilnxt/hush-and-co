@@ -1,25 +1,101 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <title>Laporan Penjualan — Hush & Co.</title>
+  <link rel="icon" href="{{ asset('favicon_io/favicon-32x32.png') }}" type="image/png">
+  <link rel="shortcut icon" href="{{ asset('favicon_io/favicon.ico') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('favicon_io/apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ asset('favicon_io/site.webmanifest') }}">
+  <meta name="theme-color" content="#1B2A4A">
   <style>
-    body { font-family: Arial, sans-serif; font-size: 12px; color: #0E1A2E; }
-    .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #1B2A4A; padding-bottom: 12px; }
-    .header h1 { font-size: 20px; color: #1B2A4A; margin: 0; }
-    .header p  { color: #6B7B95; margin: 4px 0 0; }
-    .summary   { display: flex; gap: 20px; margin-bottom: 20px; }
-    .sum-box   { background: #E8EEF7; padding: 10px 16px; border-radius: 6px; flex: 1; }
-    .sum-box p { margin: 0; }
-    .sum-label { font-size: 10px; color: #6B7B95; text-transform: uppercase; }
-    .sum-val   { font-size: 16px; font-weight: bold; color: #1B2A4A; }
-    table      { width: 100%; border-collapse: collapse; margin-top: 16px; }
-    th         { background: #1B2A4A; color: #F5EFE0; padding: 8px 10px; text-align: left; font-size: 11px; }
-    td         { padding: 7px 10px; border-bottom: 1px solid #E8E0D0; font-size: 11px; }
-    tr:nth-child(even) td { background: #FDFAF5; }
-    .footer    { margin-top: 24px; text-align: center; font-size: 10px; color: #6B7B95; }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      color: #0E1A2E;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #1B2A4A;
+      padding-bottom: 12px;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      color: #1B2A4A;
+      margin: 0;
+    }
+
+    .header p {
+      color: #6B7B95;
+      margin: 4px 0 0;
+    }
+
+    .summary {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .sum-box {
+      background: #E8EEF7;
+      padding: 10px 16px;
+      border-radius: 6px;
+      flex: 1;
+    }
+
+    .sum-box p {
+      margin: 0;
+    }
+
+    .sum-label {
+      font-size: 10px;
+      color: #6B7B95;
+      text-transform: uppercase;
+    }
+
+    .sum-val {
+      font-size: 16px;
+      font-weight: bold;
+      color: #1B2A4A;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    th {
+      background: #1B2A4A;
+      color: #F5EFE0;
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 11px;
+    }
+
+    td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #E8E0D0;
+      font-size: 11px;
+    }
+
+    tr:nth-child(even) td {
+      background: #FDFAF5;
+    }
+
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 10px;
+      color: #6B7B95;
+    }
   </style>
 </head>
+
 <body>
   <div class="header">
     <h1>Hush & Co. — Laporan Penjualan</h1>
@@ -69,4 +145,5 @@
     Digenerate oleh sistem Hush & Co. pada {{ now()->format('d M Y H:i') }}
   </div>
 </body>
+
 </html>

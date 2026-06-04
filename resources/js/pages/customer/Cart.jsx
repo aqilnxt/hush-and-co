@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     TrashIcon,
-    ArrowLeftIcon,
-    SparklesIcon,
     ShoppingBagIcon,
     CreditCardIcon,
+    ArrowLeftIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
@@ -19,7 +18,12 @@ export default function Cart() {
     const initialOrderInfo = (() => {
         const saved = localStorage.getItem('orderInfo');
         if (!saved)
-            return { orderType: 'dine-in', tableId: '', tableNumber: '', pickupName: '' };
+            return {
+                orderType: 'dine-in',
+                tableId: '',
+                tableNumber: '',
+                pickupName: '',
+            };
         const parsed = JSON.parse(saved);
         return {
             orderType: parsed.orderType || 'dine-in',
@@ -32,7 +36,9 @@ export default function Cart() {
     const [orderType, setOrderType] = useState(initialOrderInfo.orderType);
     // tableId = integer db id, tableNumber = display string (e.g. "A3")
     const [tableId, setTableId] = useState(initialOrderInfo.tableId);
-    const [tableNumber, setTableNumber] = useState(initialOrderInfo.tableNumber);
+    const [tableNumber, setTableNumber] = useState(
+        initialOrderInfo.tableNumber,
+    );
     const [pickupName, setPickupName] = useState(initialOrderInfo.pickupName);
     const [tables, setTables] = useState([]);
     const [tablesLoading, setTablesLoading] = useState(false);
@@ -67,15 +73,29 @@ export default function Cart() {
     }, [orderType, tableId, tableNumber, pickupName]);
 
     const changeQty = (id, delta) => {
-        setCart((prev) =>
-            prev.map((c) =>
-                c.id === id ? { ...c, qty: Math.max(1, c.qty + delta) } : c,
-            ),
+        const newCart = cart.map((c) =>
+            c.id === id ? { ...c, qty: Math.max(1, c.qty + delta) } : c,
+        );
+        setCart(newCart);
+        try {
+            localStorage.setItem('cart', JSON.stringify(newCart));
+        } catch (e) {}
+        const total = newCart.reduce((a, c) => a + (c.qty || 0), 0);
+        window.dispatchEvent(
+            new CustomEvent('cartchange', { detail: { count: total } }),
         );
     };
 
     const removeItem = (id) => {
-        setCart((prev) => prev.filter((c) => c.id !== id));
+        const newCart = cart.filter((c) => c.id !== id);
+        setCart(newCart);
+        try {
+            localStorage.setItem('cart', JSON.stringify(newCart));
+        } catch (e) {}
+        const total = newCart.reduce((a, c) => a + (c.qty || 0), 0);
+        window.dispatchEvent(
+            new CustomEvent('cartchange', { detail: { count: total } }),
+        );
         toast.success('Item dihapus');
     };
 
@@ -109,36 +129,9 @@ export default function Cart() {
     };
 
     return (
-        <div className="min-h-screen bg-cream-100 flex flex-col">
-            {/* ========== HEADER (disamakan dengan Orders) ========== */}
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-cream-300 shadow-sm">
-                <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
-                    {/* Kiri: logo (bisa klik ke menu) */}
-                    <button
-                        onClick={() => navigate('/menu')}
-                        className="flex items-center gap-3 group"
-                    >
-                        <div className="w-11 h-11 bg-navy-800 rounded-xl flex items-center justify-center shadow-sm group-hover:bg-navy-900 transition">
-                            <SparklesIcon className="w-6 h-6 text-cream-100" />
-                        </div>
-                        <span className="font-playfair text-xl font-bold text-navy-900">
-                            Hush <span className="text-cream-600">&</span> Co.
-                        </span>
-                    </button>
-
-                    {/* Kanan: tombol kembali ke Menu */}
-                    <button
-                        onClick={() => navigate('/menu')}
-                        className="flex items-center gap-2 text-sm font-medium text-navy-400 hover:text-navy-800 transition"
-                    >
-                        <ArrowLeftIcon className="w-4 h-4" />
-                        <span className="hidden sm:inline">Menu</span>
-                    </button>
-                </div>
-            </header>
-
+        <div className="flex-1 min-h-screen overflow-y-auto bg-cream-100 flex flex-col">
             {/* STEP INDICATOR */}
-            <div className="bg-white border-b border-cream-300 px-6 md:px-12 py-6">
+            <div className="bg-white border-b border-cream-300 px-6 md:px-12 py-6 shrink-0">
                 <div className="max-w-5xl mx-auto flex items-center justify-between">
                     {[
                         { label: 'Keranjang', active: true },
@@ -181,361 +174,323 @@ export default function Cart() {
             </div>
 
             {/* MAIN CONTENT */}
-            <div className="flex-1 max-w-7xl mx-auto w-full px-6 md:px-12 py-10">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* LEFT – Cart Items & Order Type */}
-                    <div className="lg:col-span-2 space-y-6">
-                        {/* Tipe Pesanan */}
-                        <div className="bg-white border border-cream-300 rounded-3xl p-6 shadow-sm">
-                            <h3 className="font-playfair text-lg font-medium text-navy-900 mb-4 flex items-center gap-2">
-                                <ShoppingBagIcon className="w-5 h-5 text-navy-800" />
-                                Tipe Pesanan
-                            </h3>
-                            <div className="grid grid-cols-2 gap-3">
-                                {[
-                                    {
-                                        val: 'dine-in',
-                                        label: 'Dine-in',
-                                        icon: '🪑',
-                                        sub: 'Makan di tempat',
-                                    },
-                                    {
-                                        val: 'takeaway',
-                                        label: 'Takeaway',
-                                        icon: '🥤',
-                                        sub: 'Bawa pulang',
-                                    },
-                                ].map((opt) => (
-                                    <button
-                                        key={opt.val}
-                                        onClick={() => setOrderType(opt.val)}
-                                        className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition text-left ${
-                                            orderType === opt.val
-                                                ? 'border-navy-800 bg-navy-50'
-                                                : 'border-cream-300 hover:border-navy-300 bg-white'
-                                        }`}
-                                    >
-                                        <span className="text-2xl">
-                                            {opt.icon}
-                                        </span>
-                                        <div>
-                                            <p className="text-sm font-semibold text-navy-900">
-                                                {opt.label}
-                                            </p>
-                                            <p className="text-xs text-navy-400 mt-0.5">
-                                                {opt.sub}
-                                            </p>
-                                        </div>
-                                        {orderType === opt.val && (
-                                            <span className="ml-auto w-6 h-6 rounded-full bg-navy-800 text-cream-100 text-xs flex items-center justify-center">
-                                                ✓
-                                            </span>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {orderType === 'dine-in' && (
-                                <div className="mt-5 pt-5 border-t border-cream-200">
-                                    <label className="text-xs font-semibold text-navy-800 block mb-2">
-                                        Pilih Meja
-                                    </label>
-                                    {tablesLoading ? (
-                                        <div className="flex items-center gap-2 px-4 py-3 bg-cream-100 border border-cream-300 rounded-xl text-sm text-navy-400">
-                                            <div className="w-4 h-4 border-2 border-navy-400 border-t-transparent rounded-full animate-spin" />
-                                            Memuat daftar meja...
-                                        </div>
-                                    ) : tables.length === 0 ? (
-                                        <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
-                                            ⚠️ Tidak ada meja tersedia saat ini
-                                        </div>
-                                    ) : (
-                                        <select
-                                            value={tableId}
-                                            onChange={(e) => {
-                                                const selected = tables.find(
-                                                    (t) => String(t.id) === e.target.value
-                                                );
-                                                setTableId(e.target.value);
-                                                setTableNumber(selected?.table_number || '');
-                                            }}
-                                            className="w-full px-4 py-3 bg-cream-100 border border-cream-300 rounded-xl text-sm outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition appearance-none cursor-pointer"
-                                        >
-                                            <option value="">— Pilih meja —</option>
-                                            {tables.map((t) => (
-                                                <option key={t.id} value={t.id}>
-                                                    Meja {t.table_number} · {t.capacity} orang
-                                                </option>
-                                            ))}
-                                        </select>
-                                    )}
-                                    <p className="text-xs text-navy-400 mt-2">
-                                        Scan QR Code di meja untuk isi otomatis
-                                    </p>
-                                </div>
-                            )}
-
-                            {orderType === 'takeaway' && (
-                                <div className="mt-5 pt-5 border-t border-cream-200">
-                                    <label className="text-xs font-semibold text-navy-800 block mb-2">
-                                        Nama Pickup
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={pickupName}
-                                        onChange={(e) =>
-                                            setPickupName(e.target.value)
-                                        }
-                                        placeholder="Nama kamu"
-                                        className="w-full px-4 py-3 bg-cream-100 border border-cream-300 rounded-xl text-sm outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Daftar Item */}
-                        <div className="bg-white border border-cream-300 rounded-3xl overflow-hidden shadow-sm">
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-cream-200">
-                                <h3 className="font-playfair text-lg font-medium text-navy-900">
-                                    Item Pesanan ({cart.length})
+            <div className="flex-1 w-full px-6 md:px-12 py-10">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* LEFT – Cart Items & Order Type */}
+                        <div className="lg:col-span-2 space-y-6">
+                            {/* Tipe Pesanan */}
+                            <div className="bg-white border border-cream-300 rounded-3xl p-6 shadow-sm">
+                                <h3 className="font-playfair text-lg font-medium text-navy-900 mb-4 flex items-center gap-2">
+                                    <ShoppingBagIcon className="w-5 h-5 text-navy-800" />
+                                    Tipe Pesanan
                                 </h3>
-                                {cart.length > 0 && (
-                                    <button
-                                        onClick={() => {
-                                            setCart([]);
-                                            toast.success(
-                                                'Keranjang dikosongkan',
-                                            );
-                                        }}
-                                        className="text-xs font-medium text-navy-400 hover:text-red-500 transition"
-                                    >
-                                        Hapus semua
-                                    </button>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        {
+                                            val: 'dine-in',
+                                            label: 'Dine-in',
+                                            icon: '🪑',
+                                            sub: 'Makan di tempat',
+                                        },
+                                        {
+                                            val: 'takeaway',
+                                            label: 'Takeaway',
+                                            icon: '🥤',
+                                            sub: 'Bawa pulang',
+                                        },
+                                    ].map((opt) => (
+                                        <button
+                                            key={opt.val}
+                                            onClick={() =>
+                                                setOrderType(opt.val)
+                                            }
+                                            className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition text-left ${
+                                                orderType === opt.val
+                                                    ? 'border-navy-800 bg-navy-50'
+                                                    : 'border-cream-300 hover:border-navy-300 bg-white'
+                                            }`}
+                                        >
+                                            <span className="text-2xl">
+                                                {opt.icon}
+                                            </span>
+                                            <div>
+                                                <p className="text-sm font-semibold text-navy-900">
+                                                    {opt.label}
+                                                </p>
+                                                <p className="text-xs text-navy-400 mt-0.5">
+                                                    {opt.sub}
+                                                </p>
+                                            </div>
+                                            {orderType === opt.val && (
+                                                <span className="ml-auto w-6 h-6 rounded-full bg-navy-800 text-cream-100 text-xs flex items-center justify-center">
+                                                    ✓
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {orderType === 'dine-in' && (
+                                    <div className="mt-5 pt-5 border-t border-cream-200">
+                                        <label className="text-xs font-semibold text-navy-800 block mb-2">
+                                            Pilih Meja
+                                        </label>
+                                        {tablesLoading ? (
+                                            <div className="flex items-center gap-2 px-4 py-3 bg-cream-100 border border-cream-300 rounded-xl text-sm text-navy-400">
+                                                <div className="w-4 h-4 border-2 border-navy-400 border-t-transparent rounded-full animate-spin" />
+                                                Memuat daftar meja...
+                                            </div>
+                                        ) : tables.length === 0 ? (
+                                            <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
+                                                ⚠️ Tidak ada meja tersedia saat
+                                                ini
+                                            </div>
+                                        ) : (
+                                            <select
+                                                value={tableId}
+                                                onChange={(e) => {
+                                                    const selected =
+                                                        tables.find(
+                                                            (t) =>
+                                                                String(t.id) ===
+                                                                e.target.value,
+                                                        );
+                                                    setTableId(e.target.value);
+                                                    setTableNumber(
+                                                        selected?.table_number ||
+                                                            '',
+                                                    );
+                                                }}
+                                                className="w-full px-4 py-3 bg-cream-100 border border-cream-300 rounded-xl text-sm outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition appearance-none cursor-pointer"
+                                            >
+                                                <option value="">
+                                                    — Pilih meja —
+                                                </option>
+                                                {tables.map((t) => (
+                                                    <option
+                                                        key={t.id}
+                                                        value={t.id}
+                                                    >
+                                                        Meja {t.table_number} ·{' '}
+                                                        {t.capacity} orang
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        )}
+                                        <p className="text-xs text-navy-400 mt-2">
+                                            Scan QR Code di meja untuk isi
+                                            otomatis
+                                        </p>
+                                    </div>
+                                )}
+
+                                {orderType === 'takeaway' && (
+                                    <div className="mt-5 pt-5 border-t border-cream-200">
+                                        <label className="text-xs font-semibold text-navy-800 block mb-2">
+                                            Nama Pickup
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={pickupName}
+                                            onChange={(e) =>
+                                                setPickupName(e.target.value)
+                                            }
+                                            placeholder="Nama kamu"
+                                            className="w-full px-4 py-3 bg-cream-100 border border-cream-300 rounded-xl text-sm outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
+                                        />
+                                    </div>
                                 )}
                             </div>
 
-                            {cart.length === 0 ? (
-                                <div className="py-20 text-center">
-                                    <div className="w-20 h-20 rounded-full bg-cream-200 flex items-center justify-center mx-auto mb-5 text-4xl">
-                                        🛒
-                                    </div>
-                                    <p className="text-navy-400 text-sm font-medium">
-                                        Keranjang masih kosong
-                                    </p>
-                                    <button
-                                        onClick={() => navigate('/menu')}
-                                        className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-navy-800 text-cream-100 rounded-full text-sm font-semibold hover:bg-navy-900 transition"
-                                    >
-                                        <ArrowLeftIcon className="w-4 h-4" />
-                                        Lihat Menu
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-cream-200">
-                                    {cart.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="flex items-center gap-5 px-6 py-5 hover:bg-cream-50 transition"
+                            {/* Daftar Item */}
+                            <div className="bg-white border border-cream-300 rounded-3xl overflow-hidden shadow-sm">
+                                <div className="flex items-center justify-between px-6 py-4 border-b border-cream-200">
+                                    <h3 className="font-playfair text-lg font-medium text-navy-900">
+                                        Item Pesanan ({cart.length})
+                                    </h3>
+                                    {cart.length > 0 && (
+                                        <button
+                                            onClick={() => {
+                                                setCart([]);
+                                                try {
+                                                    localStorage.setItem(
+                                                        'cart',
+                                                        JSON.stringify([]),
+                                                    );
+                                                } catch (e) {}
+                                                window.dispatchEvent(
+                                                    new CustomEvent(
+                                                        'cartchange',
+                                                        {
+                                                            detail: {
+                                                                count: 0,
+                                                            },
+                                                        },
+                                                    ),
+                                                );
+                                                toast.success(
+                                                    'Keranjang dikosongkan',
+                                                );
+                                            }}
+                                            className="text-xs font-medium text-navy-400 hover:text-red-500 transition"
                                         >
-                                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-navy-800 to-navy-600 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
-                                                ☕
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="text-sm font-semibold text-navy-900 truncate">
-                                                    {item.name}
-                                                </h4>
-                                                <p className="text-xs text-navy-400 mt-1">
-                                                    Rp{' '}
-                                                    {item.price.toLocaleString(
-                                                        'id',
-                                                    )}{' '}
-                                                    / item
-                                                </p>
-                                                <div className="flex items-center gap-2 mt-2">
+                                            Hapus semua
+                                        </button>
+                                    )}
+                                </div>
+
+                                {cart.length === 0 ? (
+                                    <div className="py-20 text-center">
+                                        <div className="w-20 h-20 rounded-full bg-cream-200 flex items-center justify-center mx-auto mb-5 text-4xl">
+                                            🛒
+                                        </div>
+                                        <p className="text-navy-400 text-sm font-medium">
+                                            Keranjang masih kosong
+                                        </p>
+                                        <button
+                                            onClick={() => navigate('/menu')}
+                                            className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-navy-800 text-cream-100 rounded-full text-sm font-semibold hover:bg-navy-900 transition"
+                                        >
+                                            <ArrowLeftIcon className="w-4 h-4" />
+                                            Lihat Menu
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-cream-200">
+                                        {cart.map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className="flex items-center gap-5 px-6 py-5 hover:bg-cream-50 transition"
+                                            >
+                                                <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-navy-800 to-navy-600 flex items-center justify-center text-2xl shrink-0 shadow-sm">
+                                                    ☕
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-sm font-semibold text-navy-900 truncate">
+                                                        {item.name}
+                                                    </h4>
+                                                    <p className="text-xs text-navy-400 mt-1">
+                                                        Rp{' '}
+                                                        {item.price.toLocaleString(
+                                                            'id',
+                                                        )}{' '}
+                                                        / item
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <button
+                                                            onClick={() =>
+                                                                changeQty(
+                                                                    item.id,
+                                                                    -1,
+                                                                )
+                                                            }
+                                                            className="w-7 h-7 rounded-lg border border-cream-300 text-navy-800 flex items-center justify-center hover:bg-cream-200 transition"
+                                                        >
+                                                            −
+                                                        </button>
+                                                        <span className="text-sm font-semibold w-6 text-center text-navy-900">
+                                                            {item.qty}
+                                                        </span>
+                                                        <button
+                                                            onClick={() =>
+                                                                changeQty(
+                                                                    item.id,
+                                                                    1,
+                                                                )
+                                                            }
+                                                            className="w-7 h-7 rounded-lg bg-navy-800 text-cream-100 flex items-center justify-center hover:bg-navy-900 transition"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-sm font-bold text-navy-900">
+                                                        Rp{' '}
+                                                        {(
+                                                            item.price *
+                                                            item.qty
+                                                        ).toLocaleString('id')}
+                                                    </p>
                                                     <button
                                                         onClick={() =>
-                                                            changeQty(
-                                                                item.id,
-                                                                -1,
-                                                            )
+                                                            removeItem(item.id)
                                                         }
-                                                        className="w-7 h-7 rounded-lg border border-cream-300 text-navy-800 flex items-center justify-center hover:bg-cream-200 transition"
+                                                        className="mt-2 w-8 h-8 rounded-lg border border-red-100 text-red-400 flex items-center justify-center hover:bg-red-50 transition"
                                                     >
-                                                        −
-                                                    </button>
-                                                    <span className="text-sm font-semibold w-6 text-center text-navy-900">
-                                                        {item.qty}
-                                                    </span>
-                                                    <button
-                                                        onClick={() =>
-                                                            changeQty(
-                                                                item.id,
-                                                                1,
-                                                            )
-                                                        }
-                                                        className="w-7 h-7 rounded-lg bg-navy-800 text-cream-100 flex items-center justify-center hover:bg-navy-900 transition"
-                                                    >
-                                                        +
+                                                        <TrashIcon className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             </div>
-                                            <div className="text-right flex-shrink-0">
-                                                <p className="text-sm font-bold text-navy-900">
-                                                    Rp{' '}
-                                                    {(
-                                                        item.price * item.qty
-                                                    ).toLocaleString('id')}
-                                                </p>
-                                                <button
-                                                    onClick={() =>
-                                                        removeItem(item.id)
-                                                    }
-                                                    className="mt-2 w-8 h-8 rounded-lg border border-red-100 text-red-400 flex items-center justify-center hover:bg-red-50 transition"
-                                                >
-                                                    <TrashIcon className="w-4 h-4" />
-                                                </button>
-                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* RIGHT – Ringkasan & Checkout */}
+                        <aside className="lg:col-span-1">
+                            <div className="sticky top-28 bg-white border border-cream-300 rounded-3xl overflow-hidden shadow-md">
+                                <div className="bg-navy-800 px-6 py-5">
+                                    <h3 className="font-playfair text-lg font-medium text-cream-100 flex items-center gap-2">
+                                        <CreditCardIcon className="w-5 h-5" />
+                                        Ringkasan
+                                    </h3>
+                                    <p className="text-xs text-cream-200 mt-1">
+                                        {orderType === 'dine-in'
+                                            ? `Dine-in · Meja ${tableNumber || '—'}`
+                                            : `Takeaway · ${pickupName || '—'}`}
+                                    </p>
+                                </div>
+                                <div className="p-6">
+                                    {cart.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            className="flex justify-between text-sm py-2"
+                                        >
+                                            <span className="text-navy-400 truncate mr-2">
+                                                <span className="text-navy-800 font-semibold">
+                                                    {item.qty}×
+                                                </span>{' '}
+                                                {item.name}
+                                            </span>
+                                            <span className="text-navy-800 font-medium">
+                                                Rp{' '}
+                                                {(
+                                                    item.price * item.qty
+                                                ).toLocaleString('id')}
+                                            </span>
                                         </div>
                                     ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
 
-                    {/* RIGHT – Ringkasan & Checkout */}
-                    <aside className="lg:col-span-1">
-                        <div className="sticky top-28 bg-white border border-cream-300 rounded-3xl overflow-hidden shadow-md">
-                            <div className="bg-navy-800 px-6 py-5">
-                                <h3 className="font-playfair text-lg font-medium text-cream-100 flex items-center gap-2">
-                                    <CreditCardIcon className="w-5 h-5" />
-                                    Ringkasan
-                                </h3>
-                                <p className="text-xs text-cream-200 mt-1">
-                                    {orderType === 'dine-in'
-                                        ? `Dine-in · Meja ${tableNumber || '—'}`
-                                        : `Takeaway · ${pickupName || '—'}`}
-                                </p>
-                            </div>
-                            <div className="p-6">
-                                {cart.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="flex justify-between text-sm py-2"
-                                    >
-                                        <span className="text-navy-400 truncate mr-2">
-                                            <span className="text-navy-800 font-semibold">
-                                                {item.qty}×
-                                            </span>{' '}
-                                            {item.name}
+                                    <div className="border-t border-cream-200 mt-4 pt-4 flex justify-between items-center">
+                                        <span className="text-sm font-semibold text-navy-900">
+                                            Total
                                         </span>
-                                        <span className="text-navy-800 font-medium">
-                                            Rp{' '}
-                                            {(
-                                                item.price * item.qty
-                                            ).toLocaleString('id')}
+                                        <span className="text-xl font-bold text-navy-900">
+                                            Rp {subtotal.toLocaleString('id')}
                                         </span>
                                     </div>
-                                ))}
 
-                                <div className="border-t border-cream-200 mt-4 pt-4 flex justify-between items-center">
-                                    <span className="text-sm font-semibold text-navy-900">
-                                        Total
-                                    </span>
-                                    <span className="text-xl font-bold text-navy-900">
-                                        Rp {subtotal.toLocaleString('id')}
-                                    </span>
+                                    <button
+                                        onClick={handleCheckout}
+                                        className="mt-6 w-full py-3.5 bg-navy-800 text-cream-100 rounded-full font-bold hover:bg-navy-900 transition flex items-center justify-center gap-2 shadow-md"
+                                    >
+                                        Lanjut ke Checkout
+                                        <ArrowLeftIcon className="w-4 h-4 rotate-180" />
+                                    </button>
+
+                                    <p className="text-xs text-navy-400 text-center mt-4 leading-relaxed">
+                                        Pembayaran dilakukan secara tunai di
+                                        kasir.
+                                    </p>
                                 </div>
-
-                                <button
-                                    onClick={handleCheckout}
-                                    className="mt-6 w-full py-3.5 bg-navy-800 text-cream-100 rounded-full font-bold hover:bg-navy-900 transition flex items-center justify-center gap-2 shadow-md"
-                                >
-                                    Lanjut ke Checkout
-                                    <ArrowLeftIcon className="w-4 h-4 rotate-180" />
-                                </button>
-
-                                <p className="text-xs text-navy-400 text-center mt-4 leading-relaxed">
-                                    Pembayaran dilakukan secara tunai di kasir.
-                                </p>
                             </div>
-                        </div>
-                    </aside>
+                        </aside>
+                    </div>
                 </div>
             </div>
-
-            {/* ========== FOOTER (disamakan dengan Orders) ========== */}
-            <footer className="bg-navy-800 text-cream-200 mt-auto">
-                <div className="max-w-7xl mx-auto px-6 lg:px-12 py-10">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        {/* Brand */}
-                        <div className="col-span-2">
-                            <h3 className="font-playfair text-2xl font-medium mb-3">
-                                Hush <span className="text-cream-600">&</span>{' '}
-                                Co.
-                            </h3>
-                            <p className="text-navy-200 text-sm leading-relaxed max-w-xs">
-                                Tempat yang tenang untuk minum kopi, bekerja,
-                                dan menikmati waktu sendiri maupun bersama.
-                            </p>
-                        </div>
-
-                        {/* Navigasi */}
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-widest text-cream-400 mb-4">
-                                Menu
-                            </p>
-                            <ul className="space-y-2 text-sm text-navy-200">
-                                <li>
-                                    <button
-                                        onClick={() => navigate('/menu')}
-                                        className="hover:text-cream-100 transition"
-                                    >
-                                        Lihat Menu
-                                    </button>
-                                </li>
-                                <li>
-                                    <button
-                                        onClick={() => navigate('/orders')}
-                                        className="hover:text-cream-100 transition"
-                                    >
-                                        Riwayat Pesanan
-                                    </button>
-                                </li>
-                                <li>
-                                    <button
-                                        onClick={() => navigate('/cart')}
-                                        className="hover:text-cream-100 transition"
-                                    >
-                                        Keranjang
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-
-                        {/* Kontak */}
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-widest text-cream-400 mb-4">
-                                Kontak
-                            </p>
-                            <ul className="space-y-2 text-sm text-navy-200">
-                                <li>📍 Jakarta, Indonesia</li>
-                                <li>📞 +62 812-3456-7890</li>
-                                <li>✉️ halo@hushandco.id</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div className="border-t border-cream-400/10 mt-10 pt-6 flex flex-col md:flex-row items-center justify-between text-xs text-navy-400">
-                        <p>
-                            © {new Date().getFullYear()} Hush & Co. All rights
-                            reserved.
-                        </p>
-                        <p className="font-playfair italic text-cream-600 mt-2 md:mt-0">
-                            A quiet place to think, sip & stay.
-                        </p>
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 }
