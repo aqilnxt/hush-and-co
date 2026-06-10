@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
             'name'        => 'Admin Hush',
             'email'       => 'admin@hushandco.id',
             'password'    => Hash::make('password'),
-            'role'        => 'admin',
+            'role'        => 'admin',   
             'points'      => 0,
             'provider'    => 'local',
             'provider_id' => null,

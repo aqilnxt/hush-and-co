@@ -166,7 +166,8 @@ export default function Reports() {
         : [];
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-7xl mx-auto w-full px-5 md:px-8 py-8">
+            <div className="space-y-6">
                 {/* Filter Section */}
                 <div className="bg-white border border-cream-300 rounded-3xl p-6 shadow-sm">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
@@ -480,6 +481,7 @@ export default function Reports() {
                         </div>
                     </>
                 )}
+            </div>
         </div>
     );
 }

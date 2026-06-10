@@ -175,7 +175,8 @@ export default function UserManager() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="max-w-7xl mx-auto w-full px-5 md:px-8 py-8">
+            <div className="space-y-6">
                 {/* Statistik */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {stats.map((stat) => (
@@ -339,158 +340,163 @@ export default function UserManager() {
                     </div>
                 </div>
 
-            {/* Modal Tambah/Edit */}
-            {showModal && (
-                <div
-                    className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-                    onClick={(e) =>
-                        e.target === e.currentTarget && setShowModal(false)
-                    }
-                >
-                    <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
-                        <div className="flex items-center justify-between p-6 border-b border-cream-200">
-                            <h2 className="font-playfair text-xl font-semibold text-navy-900">
-                                {editTarget ? 'Edit User' : 'Tambah Staff'}
-                            </h2>
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="w-10 h-10 rounded-xl bg-cream-100 flex items-center justify-center hover:bg-cream-200 transition"
-                            >
-                                <XMarkIcon className="w-5 h-5 text-navy-600" />
-                            </button>
-                        </div>
-                        <form onSubmit={handleSave} className="p-6 space-y-5">
-                            <div>
-                                <label className="block text-sm font-semibold text-navy-800 mb-2">
-                                    Nama
-                                </label>
-                                <input
-                                    type="text"
-                                    value={form.name}
-                                    onChange={(e) =>
-                                        setForm({
-                                            ...form,
-                                            name: e.target.value,
-                                        })
-                                    }
-                                    placeholder="Nama lengkap"
-                                    required
-                                    className="w-full px-4 py-3 bg-cream-50 border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-navy-800 mb-2">
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    value={form.email}
-                                    onChange={(e) =>
-                                        setForm({
-                                            ...form,
-                                            email: e.target.value,
-                                        })
-                                    }
-                                    placeholder="email@domain.com"
-                                    required
-                                    className="w-full px-4 py-3 bg-cream-50 border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-navy-800 mb-2">
-                                        Password{' '}
-                                        {editTarget && (
-                                            <span className="text-navy-400 font-normal">
-                                                (opsional)
-                                            </span>
-                                        )}
-                                    </label>
-                                    <input
-                                        type="password"
-                                        value={form.password}
-                                        onChange={(e) =>
-                                            setForm({
-                                                ...form,
-                                                password: e.target.value,
-                                            })
-                                        }
-                                        placeholder="Min. 8 karakter"
-                                        className="w-full px-4 py-3 bg-cream-50 border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-navy-800 mb-2">
-                                        Konfirmasi Password
-                                    </label>
-                                    <input
-                                        type="password"
-                                        value={form.password_confirmation}
-                                        onChange={(e) =>
-                                            setForm({
-                                                ...form,
-                                                password_confirmation:
-                                                    e.target.value,
-                                            })
-                                        }
-                                        placeholder="Ulangi password"
-                                        className="w-full px-4 py-3 bg-cream-50 border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-navy-800 mb-2">
-                                    Peran
-                                </label>
-                                <select
-                                    value={form.role}
-                                    onChange={(e) =>
-                                        setForm({
-                                            ...form,
-                                            role: e.target.value,
-                                        })
-                                    }
-                                    className="w-full px-4 py-3 bg-cream-50 border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition appearance-none"
-                                >
-                                    <option value="staff">Staff</option>
-                                    <option value="customer">Customer</option>
-                                    {editTarget?.role === 'admin' && (
-                                        <option value="admin">Admin</option>
-                                    )}
-                                </select>
-                            </div>
-                            <div className="flex justify-end gap-3 pt-4 border-t border-cream-200">
+                {/* Modal Tambah/Edit */}
+                {showModal && (
+                    <div
+                        className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={(e) =>
+                            e.target === e.currentTarget && setShowModal(false)
+                        }
+                    >
+                        <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+                            <div className="flex items-center justify-between p-6 border-b border-cream-200">
+                                <h2 className="font-playfair text-xl font-semibold text-navy-900">
+                                    {editTarget ? 'Edit User' : 'Tambah Staff'}
+                                </h2>
                                 <button
-                                    type="button"
                                     onClick={() => setShowModal(false)}
-                                    className="px-6 py-2.5 rounded-full border border-cream-300 text-navy-600 font-semibold hover:bg-cream-100 transition"
+                                    className="w-10 h-10 rounded-xl bg-cream-100 flex items-center justify-center hover:bg-cream-200 transition"
                                 >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={saving}
-                                    className="px-6 py-2.5 rounded-full bg-navy-800 text-cream-100 font-semibold hover:bg-navy-900 transition disabled:opacity-60 flex items-center gap-2"
-                                >
-                                    {saving ? (
-                                        <div className="w-4 h-4 border-2 border-cream-100 border-t-transparent rounded-full animate-spin" />
-                                    ) : editTarget ? (
-                                        <PencilSquareIcon className="w-4 h-4" />
-                                    ) : (
-                                        <PlusIcon className="w-4 h-4" />
-                                    )}
-                                    {saving
-                                        ? 'Menyimpan...'
-                                        : editTarget
-                                          ? 'Simpan Perubahan'
-                                          : 'Buat Akun'}
+                                    <XMarkIcon className="w-5 h-5 text-navy-600" />
                                 </button>
                             </div>
-                        </form>
+                            <form
+                                onSubmit={handleSave}
+                                className="p-6 space-y-5"
+                            >
+                                <div>
+                                    <label className="block text-sm font-semibold text-navy-800 mb-2">
+                                        Nama
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={form.name}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                name: e.target.value,
+                                            })
+                                        }
+                                        placeholder="Nama lengkap"
+                                        required
+                                        className="w-full px-4 py-3 bg-cream-50 border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-navy-800 mb-2">
+                                        Email
+                                    </label>
+                                    <input
+                                        type="email"
+                                        value={form.email}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                email: e.target.value,
+                                            })
+                                        }
+                                        placeholder="email@domain.com"
+                                        required
+                                        className="w-full px-4 py-3 bg-cream-50 border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-navy-800 mb-2">
+                                            Password{' '}
+                                            {editTarget && (
+                                                <span className="text-navy-400 font-normal">
+                                                    (opsional)
+                                                </span>
+                                            )}
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={form.password}
+                                            onChange={(e) =>
+                                                setForm({
+                                                    ...form,
+                                                    password: e.target.value,
+                                                })
+                                            }
+                                            placeholder="Min. 8 karakter"
+                                            className="w-full px-4 py-3 bg-cream-50 border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-navy-800 mb-2">
+                                            Konfirmasi Password
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={form.password_confirmation}
+                                            onChange={(e) =>
+                                                setForm({
+                                                    ...form,
+                                                    password_confirmation:
+                                                        e.target.value,
+                                                })
+                                            }
+                                            placeholder="Ulangi password"
+                                            className="w-full px-4 py-3 bg-cream-50 border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-navy-800 mb-2">
+                                        Peran
+                                    </label>
+                                    <select
+                                        value={form.role}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                role: e.target.value,
+                                            })
+                                        }
+                                        className="w-full px-4 py-3 bg-cream-50 border border-cream-300 rounded-xl text-sm text-navy-900 outline-none focus:border-navy-400 focus:ring-2 focus:ring-navy-100 transition appearance-none"
+                                    >
+                                        <option value="staff">Staff</option>
+                                        <option value="customer">
+                                            Customer
+                                        </option>
+                                        {editTarget?.role === 'admin' && (
+                                            <option value="admin">Admin</option>
+                                        )}
+                                    </select>
+                                </div>
+                                <div className="flex justify-end gap-3 pt-4 border-t border-cream-200">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowModal(false)}
+                                        className="px-6 py-2.5 rounded-full border border-cream-300 text-navy-600 font-semibold hover:bg-cream-100 transition"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={saving}
+                                        className="px-6 py-2.5 rounded-full bg-navy-800 text-cream-100 font-semibold hover:bg-navy-900 transition disabled:opacity-60 flex items-center gap-2"
+                                    >
+                                        {saving ? (
+                                            <div className="w-4 h-4 border-2 border-cream-100 border-t-transparent rounded-full animate-spin" />
+                                        ) : editTarget ? (
+                                            <PencilSquareIcon className="w-4 h-4" />
+                                        ) : (
+                                            <PlusIcon className="w-4 h-4" />
+                                        )}
+                                        {saving
+                                            ? 'Menyimpan...'
+                                            : editTarget
+                                              ? 'Simpan Perubahan'
+                                              : 'Buat Akun'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }
-

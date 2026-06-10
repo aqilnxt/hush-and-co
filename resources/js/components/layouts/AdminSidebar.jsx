@@ -7,6 +7,7 @@ import {
     Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import ProfileDropdown from '../common/ProfileDropdown';
+import useSiteSettings, { resolveSiteImage } from '../../hooks/useSiteSettings';
 
 function renderIcon(icon) {
     if (!icon) return null;
@@ -17,6 +18,11 @@ function renderIcon(icon) {
 
 function AdminSidebar({ sidebarItems, user, isOpen, onClose, onLogout }) {
     const navigate = useNavigate();
+    const { settings } = useSiteSettings();
+    const logoSrc = resolveSiteImage(
+        settings?.logo,
+        '/images/hush-co-logo.png',
+    );
 
     return (
         <aside
@@ -27,7 +33,7 @@ function AdminSidebar({ sidebarItems, user, isOpen, onClose, onLogout }) {
                 <Link to="/" className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center shadow-sm bg-white">
                         <img
-                            src="/images/hush-co-logo.png"
+                            src={logoSrc}
                             alt="Hush & Co"
                             className="h-full w-full object-cover"
                             onError={(e) => {

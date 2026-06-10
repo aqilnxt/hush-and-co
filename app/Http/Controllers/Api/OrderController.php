@@ -67,6 +67,9 @@ class OrderController extends Controller
             'items.*.menu_id'  => 'required|exists:menus,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.notes'    => 'nullable|string',
+            'items.*.toppings' => 'sometimes|array',
+            'items.*.toppings.*.topping_id' => 'required_with:items.*.toppings|exists:toppings,id',
+            'items.*.toppings.*.qty' => 'nullable|integer|min:1',
             'use_points'  => 'nullable|boolean',
         ]);
 
@@ -79,14 +82,49 @@ class OrderController extends Controller
             $orderItems = [];
 
             foreach ($request->items as $item) {
-                $menu = Menu::findOrFail($item['menu_id']);
+                $menu = Menu::with('toppings')->findOrFail($item['menu_id']);
 
                 // Cek menu tersedia
                 if (!$menu->is_available) {
                     throw new \Exception("Menu {$menu->name} sedang tidak tersedia.");
                 }
 
-                $subtotal     = $menu->price * $item['quantity'];
+                // Hitung topping untuk item ini
+                $toppingsForItem = [];
+                $toppingsExtraPerUnit = 0;
+
+                if (!empty($item['toppings']) && is_array($item['toppings'])) {
+                    foreach ($item['toppings'] as $tSel) {
+                        $topping = \App\Models\Topping::findOrFail($tSel['topping_id']);
+                        $qty = isset($tSel['qty']) ? max(1, (int)$tSel['qty']) : 1;
+
+                        // Pastikan topping tersedia untuk menu dan tidak melebihi max
+                        $menuT = $menu->toppings->firstWhere('id', $topping->id);
+                        if (!$menuT) {
+                            throw new \Exception("Topping {$topping->name} tidak tersedia untuk menu {$menu->name}.");
+                        }
+
+                        $maxAllowed = $menuT->pivot->max_allowed ?? 1;
+                        if ($qty > $maxAllowed) {
+                            throw new \Exception("Topping {$topping->name} melebihi batas maksimum ({$maxAllowed}).");
+                        }
+
+                        $unitPrice = $menuT->pivot->price_override !== null ? $menuT->pivot->price_override : $topping->price;
+
+                        $toppingsForItem[] = [
+                            'topping_id' => $topping->id,
+                            'qty' => $qty,
+                            'unit_price' => $unitPrice,
+                            'name' => $topping->name,
+                        ];
+
+                        // Tambah harga topping ke per-unit extra
+                        $toppingsExtraPerUnit += ($unitPrice * $qty);
+                    }
+                }
+
+                $perUnitPrice = $menu->price + $toppingsExtraPerUnit;
+                $subtotal     = $perUnitPrice * $item['quantity'];
                 $totalPrice  += $subtotal;
 
                 $orderItems[] = [
@@ -95,11 +133,103 @@ class OrderController extends Controller
                     'price'    => $menu->price,
                     'subtotal' => $subtotal,
                     'notes'    => $item['notes'] ?? null,
+                    'toppings' => $toppingsForItem,
                 ];
             }
 
-            // Hitung potongan poin jika diaktifkan
             $user = $request->user('sanctum') ?: $request->user();
+
+            // 1. Check points multiplier (Monday double points)
+            $pointsMultiplier = now()->isMonday() ? 2 : 1;
+
+            // 2. Check Birthday treat eligibility
+            $birthdayDrinkClaimed = false;
+            $birthdayDiscount = 0;
+            $birthdayTargetIndex = null;
+
+            if ($user && $user->birth_date) {
+                $isBirthdayMonth = (int) date('m') === (int) date('m', strtotime($user->birth_date));
+
+                $alreadyClaimedThisYear = Order::where('user_id', $user->id)
+                    ->where('birthday_drink_claimed', true)
+                    ->whereYear('created_at', date('Y'))
+                    ->where('status', '!=', 'dibatalkan')
+                    ->exists();
+
+                if ($isBirthdayMonth && !$alreadyClaimedThisYear) {
+                    // Check if there is a drink item in the order
+                    $drinkItems = [];
+                    foreach ($orderItems as $index => $item) {
+                        $menu = Menu::with('category')->find($item['menu_id']);
+                        if ($menu && $menu->category && $menu->category->slug !== 'food') {
+                            $drinkItems[] = [
+                                'index' => $index,
+                                'price' => $item['price']
+                            ];
+                        }
+                    }
+
+                    if (!empty($drinkItems)) {
+                        // Discount the cheapest drink
+                        usort($drinkItems, function ($a, $b) {
+                            return $a['price'] <=> $b['price'];
+                        });
+
+                        $birthdayTargetIndex = $drinkItems[0]['index'];
+                        $birthdayDiscount = $orderItems[$birthdayTargetIndex]['price'];
+                        $birthdayDrinkClaimed = true;
+                    }
+                }
+            }
+
+            // 3. Check Kopi ke-10 Gratis eligibility
+            $freeDrinkClaimed = false;
+            $freeDrinkDiscount = 0;
+
+            if ($user) {
+                // Refresh user to get accessors
+                $userModel = User::find($user->id);
+                $freeDrinksAvailable = $userModel->free_drinks_available;
+
+                if ($freeDrinksAvailable > 0) {
+                    // Find a drink item (excluding the one taken by birthday treat if applicable)
+                    $drinkItems = [];
+                    foreach ($orderItems as $index => $item) {
+                        $menu = Menu::with('category')->find($item['menu_id']);
+                        if ($menu && $menu->category && $menu->category->slug !== 'food') {
+                            $availableQty = $item['quantity'];
+                            if ($birthdayDrinkClaimed && $index === $birthdayTargetIndex) {
+                                $availableQty--;
+                            }
+                            if ($availableQty > 0) {
+                                $drinkItems[] = [
+                                    'index' => $index,
+                                    'price' => $item['price']
+                                ];
+                            }
+                        }
+                    }
+
+                    if (!empty($drinkItems)) {
+                        // Discount the cheapest remaining drink
+                        usort($drinkItems, function ($a, $b) {
+                            return $a['price'] <=> $b['price'];
+                        });
+                        $freeDrinkDiscount = $drinkItems[0]['price'];
+                        $freeDrinkClaimed = true;
+                    }
+                }
+            }
+
+            // Apply discounts to totalPrice
+            if ($birthdayDrinkClaimed) {
+                $totalPrice = max(0, $totalPrice - $birthdayDiscount);
+            }
+            if ($freeDrinkClaimed) {
+                $totalPrice = max(0, $totalPrice - $freeDrinkDiscount);
+            }
+
+            // Hitung potongan poin jika diaktifkan
             $pointsUsed = 0;
 
             if ($request->use_points && $user) {
@@ -129,6 +259,9 @@ class OrderController extends Controller
                 'payment_status' => 'unpaid',
                 'total_price'    => $totalPrice,
                 'points_used'    => $pointsUsed,
+                'free_drink_claimed' => $freeDrinkClaimed,
+                'birthday_drink_claimed' => $birthdayDrinkClaimed,
+                'points_multiplier' => $pointsMultiplier,
             ]);
 
             // Buat log penukaran poin
@@ -141,9 +274,25 @@ class OrderController extends Controller
                 ]);
             }
 
-            // Buat order items
+            // Buat order items dan simpan topping per order item
             foreach ($orderItems as $item) {
-                $order->orderItems()->create($item);
+                $created = $order->orderItems()->create([
+                    'menu_id' => $item['menu_id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'subtotal' => $item['subtotal'],
+                    'notes' => $item['notes'] ?? null,
+                ]);
+
+                // attach toppings jika ada
+                if (!empty($item['toppings'])) {
+                    foreach ($item['toppings'] as $t) {
+                        $created->toppings()->attach($t['topping_id'], [
+                            'qty' => $t['qty'],
+                            'price_at_order' => $t['unit_price'],
+                        ]);
+                    }
+                }
             }
 
             // Update status meja jadi occupied
@@ -151,6 +300,9 @@ class OrderController extends Controller
                 Table::where('id', $request->table_id)
                     ->update(['status' => 'occupied']);
             }
+
+            // Award points immediately after the order is created successfully.
+            $this->checkAndAwardPoints($order, true);
 
             return $order;
         });
@@ -225,7 +377,7 @@ class OrderController extends Controller
     // GET /api/staff/orders — semua order untuk staff
     public function staffOrders(Request $request)
     {
-        $query = Order::with(['orderItems.menu', 'table', 'user'])
+        $query = Order::with(['orderItems.menu.category', 'orderItems.toppings', 'table', 'user'])
             ->latest();
 
         // Filter by status
@@ -264,10 +416,11 @@ class OrderController extends Controller
     }
 
     /**
-     * Award points to the user if the order is completed and paid.
+     * Award points to the user if the order is completed and paid,
+     * or when a valid order is created and should immediately earn points.
      * Award ratio: 1 point for every Rp 10.000 spent.
      */
-    private function checkAndAwardPoints(Order $order)
+    private function checkAndAwardPoints(Order $order, bool $force = false)
     {
         if (!$order->user_id) {
             return;
@@ -276,8 +429,9 @@ class OrderController extends Controller
         // Segarkan data pesanan untuk memastikan status terkini
         $order->refresh();
 
-        // Poin hanya diberikan jika pesanan SELESAI dan LUNAS (paid)
-        if ($order->status !== 'selesai' || $order->payment_status !== 'paid') {
+        // Poin hanya diberikan jika pesanan SELESAI dan LUNAS (paid),
+        // kecuali dipaksa pada saat pembuatan order.
+        if (!$force && ($order->status !== 'selesai' || $order->payment_status !== 'paid')) {
             return;
         }
 
@@ -290,20 +444,58 @@ class OrderController extends Controller
             return;
         }
 
-        // Hitung poin yang didapatkan (1 poin per Rp 10.000)
-        $pointsEarned = floor($order->total_price / 10000);
+        // Hitung poin yang didapatkan (1 poin per Rp 10.000, dikali multiplier jika ada)
+        $pointsEarned = floor($order->total_price / 10000) * ($order->points_multiplier ?? 1);
+
+        $user = User::find($order->user_id);
+        if (!$user) {
+            return;
+        }
 
         if ($pointsEarned > 0) {
-            $user = User::find($order->user_id);
-            if ($user) {
-                $user->increment('points', $pointsEarned);
+            $user->increment('points', $pointsEarned);
 
-                // Buat log riwayat
+            // Buat log riwayat
+            PointLog::create([
+                'user_id'       => $user->id,
+                'order_id'      => $order->id,
+                'points_change' => $pointsEarned,
+                'type'          => 'earn',
+            ]);
+        }
+
+        // Award first order bonus: +10 poin ketika user menyelesaikan pesanan pertama mereka
+        $this->checkAndAwardFirstOrderBonus($order, $user);
+    }
+
+    /**
+     * Award bonus poin untuk pesanan pertama user.
+     * Bonus: +10 poin
+     * Hanya diberikan sekali per user, pada saat pesanan pertama selesai.
+     */
+    private function checkAndAwardFirstOrderBonus(Order $order, User $user)
+    {
+        // Hitung total pesanan selesai user (menggunakan accessor dari User model)
+        $completedOrdersCount = $user->getCompletedTransactionsCountAttribute();
+
+        // Jika ini adalah pesanan pertama yang selesai (count == 1)
+        if ($completedOrdersCount === 1) {
+            // Cek apakah user sudah pernah klaim first order bonus (double claim prevention)
+            $alreadyClaimed = PointLog::where('user_id', $user->id)
+                ->where('type', 'first_order_bonus')
+                ->exists();
+
+            if (!$alreadyClaimed) {
+                // Award +10 bonus poin
+                $bonusPoints = 10;
+                $user->increment('points', $bonusPoints);
+
+                // Buat log riwayat dengan type='first_order_bonus'
                 PointLog::create([
                     'user_id'       => $user->id,
                     'order_id'      => $order->id,
-                    'points_change' => $pointsEarned,
-                    'type'          => 'earn',
+                    'points_change' => $bonusPoints,
+                    'type'          => 'first_order_bonus',
                 ]);
             }
         }

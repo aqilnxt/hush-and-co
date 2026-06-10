@@ -29,4 +29,12 @@ class OrderItem extends Model
     {
         return $this->belongsTo(Menu::class);
     }
+
+    // Relasi: topping yang dipilih untuk order item ini
+    public function toppings()
+    {
+        return $this->belongsToMany(Topping::class, 'order_item_toppings')
+            ->withPivot(['qty', 'price_at_order'])
+            ->withTimestamps();
+    }
 }

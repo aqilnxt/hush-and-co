@@ -33,6 +33,7 @@ import Checkout from './pages/customer/Checkout';
 import Orders from './pages/customer/Orders';
 import OrderDetail from './pages/customer/OrderDetail';
 import OAuthCallback from './pages/auth/OAuthCallback';
+import SupabaseOAuthCallback from './pages/auth/SupabaseOAuthCallback';
 
 // Staff Pages
 import StaffDashboard from './pages/staff/Dashboard';
@@ -40,11 +41,13 @@ import StaffDashboard from './pages/staff/Dashboard';
 // Admin Pages
 import AdminDashboard from './pages/admin/Dashboard';
 import MenuManager from './pages/admin/MenuManager';
+import ToppingManager from './pages/admin/ToppingManager';
 import CategoryManager from './pages/admin/CategoryManager';
 import TableManager from './pages/admin/TableManager';
 import UserManager from './pages/admin/UserManager';
 import Reports from './pages/admin/Reports';
 import AdminGallery from './pages/admin/Gallery';
+import SiteSettings from './pages/admin/SiteSettings';
 import DashboardLayout from './layouts/DashboardLayout';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
@@ -57,6 +60,7 @@ import {
     UserGroupIcon,
     DocumentChartBarIcon,
     QueueListIcon,
+    TagIcon,
 } from '@heroicons/react/24/outline';
 
 // Protected Route
@@ -153,6 +157,12 @@ function AdminDashboardLayout() {
             active: location.pathname === '/admin/menus',
         },
         {
+            path: '/admin/toppings',
+            label: 'Toppings',
+            icon: TagIcon,
+            active: location.pathname === '/admin/toppings',
+        },
+        {
             path: '/admin/tables',
             label: 'Meja & QR',
             icon: TableCellsIcon,
@@ -226,6 +236,10 @@ function AppRoutes() {
                 <Route path="admin/login" element={<Login variant="admin" />} />
                 <Route path="register" element={<Register />} />
                 <Route path="oauth-success" element={<OAuthCallback />} />
+                <Route
+                    path="supabase-oauth-callback"
+                    element={<SupabaseOAuthCallback />}
+                />
             </Route>
 
             <Route path="/" element={<CustomerLayout />}>
@@ -277,11 +291,13 @@ function AppRoutes() {
             >
                 <Route index element={<AdminDashboard />} />
                 <Route path="menus" element={<MenuManager />} />
+                <Route path="toppings" element={<ToppingManager />} />
                 <Route path="categories" element={<CategoryManager />} />
                 <Route path="tables" element={<TableManager />} />
                 <Route path="users" element={<UserManager />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="gallery" element={<AdminGallery />} />
+                <Route path="site-settings" element={<SiteSettings />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="settings" element={<Settings />} />
             </Route>

@@ -33,4 +33,12 @@ class Menu extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    // Relasi: toppings yang tersedia untuk menu ini (dikonfigurasi admin)
+    public function toppings()
+    {
+        return $this->belongsToMany(Topping::class, 'menu_toppings')
+            ->withPivot(['max_allowed', 'is_required', 'price_override'])
+            ->withTimestamps();
+    }
 }

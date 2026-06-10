@@ -13,6 +13,12 @@ class GalleryTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        GalleryItem::query()->delete();
+    }
+
     public function test_public_can_get_only_active_gallery_items()
     {
         // 1. Create active item

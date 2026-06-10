@@ -12,7 +12,10 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             CategorySeeder::class,
             MenuSeeder::class,
+            ToppingsSeeder::class,
+            MenuToppingsSeeder::class,
             TableSeeder::class,
+            SiteSettingSeeder::class,
         ]);
     }
 }

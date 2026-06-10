@@ -18,6 +18,9 @@ class Order extends Model
         'payment_status',
         'total_price',
         'points_used',
+        'free_drink_claimed',
+        'birthday_drink_claimed',
+        'points_multiplier',
     ];
 
     // Relasi: order milik satu user

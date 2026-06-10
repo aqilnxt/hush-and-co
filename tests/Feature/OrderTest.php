@@ -115,15 +115,15 @@ class OrderTest extends TestCase
         $response->assertStatus(201);
         $orderId = $response->json('data.id');
 
-        $this->assertEquals(0, $customer->fresh()->points);
+        $this->assertEquals(4, $customer->fresh()->points);
 
         // 2. Mark order as paid
         $response = $this->actingAs(User::factory()->create(['role' => 'staff']))
             ->patchJson("/api/orders/{$orderId}/payment");
         $response->assertStatus(200);
 
-        // Point shouldn't be awarded yet since status is still 'pending'
-        $this->assertEquals(0, $customer->fresh()->points);
+        // Point should remain the same after payment because it was already awarded.
+        $this->assertEquals(4, $customer->fresh()->points);
 
         // 3. Mark status as 'selesai'
         $response = $this->actingAs(User::factory()->create(['role' => 'staff']))
@@ -166,8 +166,8 @@ class OrderTest extends TestCase
         $response->assertStatus(201);
         $newOrderId = $response->json('data.id');
 
-        // Check if points decremented
-        $this->assertEquals(0, $customer->fresh()->points);
+        // Check if points decremented then earned from the new order total.
+        $this->assertEquals(1, $customer->fresh()->points);
 
         // Check if total price is 11.000
         $this->assertEquals(11000, $response->json('data.total_price'));
@@ -179,6 +179,14 @@ class OrderTest extends TestCase
             'order_id' => $newOrderId,
             'points_change' => -4,
             'type' => 'redeem'
+        ]);
+
+        // Check if earn log created for the new order
+        $this->assertDatabaseHas('point_logs', [
+            'user_id' => $customer->id,
+            'order_id' => $newOrderId,
+            'points_change' => 1,
+            'type' => 'earn'
         ]);
     }
 }

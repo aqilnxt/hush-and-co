@@ -17,9 +17,5 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, $request) {
-            return response()->json([
-                'message' => 'Ukuran file terlalu besar untuk diproses oleh server PHP. Silakan tingkatkan batas "upload_max_filesize" dan "post_max_size" di file php.ini Anda.',
-            ], 413);
-        });
+        //
     })->create();

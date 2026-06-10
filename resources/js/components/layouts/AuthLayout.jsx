@@ -1,27 +1,45 @@
 import { Outlet, useLocation, Link } from 'react-router-dom';
+import useSiteSettings from '../../hooks/useSiteSettings';
 
 export default function AuthLayout() {
     const location = useLocation();
+    const { settings } = useSiteSettings();
     const path = location.pathname;
 
-    const mode = path === '/register'
-        ? 'register'
-        : path === '/staff/login'
-            ? 'staff'
-            : path === '/admin/login'
+    const resolveSiteImage = (value, fallback) => {
+        if (!value) return fallback;
+        if (value.startsWith('http')) return value;
+        return `${window.location.origin}${value}`;
+    };
+
+    const logoSrc = resolveSiteImage(
+        settings?.logo,
+        '/images/hush-co-logo.png',
+    );
+    const authBgSrc = resolveSiteImage(
+        settings?.auth_bg,
+        '/images/hush-co-cafe.png',
+    );
+
+    const mode =
+        path === '/register'
+            ? 'register'
+            : path === '/staff/login'
+              ? 'staff'
+              : path === '/admin/login'
                 ? 'admin'
                 : 'customer';
 
     const leftPanel = {
         customer: {
-            title: 'Your quiet place is waiting.',
+            title: 'Tempat yang tenang sudah menunggu.',
             description:
-                'Masuk ke akun Hush & Co. atau lanjut sebagai tamu untuk langsung memesan kopi tanpa repot.',
+                'Masuk ke akun Hush & Co. atau lanjut sebagai tamu untuk memesan langsung dari meja — tanpa repot.',
         },
         register: {
-            title: 'Start your journey with us.',
+            title: 'Mulai perjalananmu bersama kami.',
             description:
-                'Daftar dan mulai nikmati pengalaman memesan di Hush & Co. — lebih mudah, lebih menyenangkan.',
+                'Daftar dan nikmati pengalaman memesan yang tenang — langsung dari mejamu, tanpa antri, tanpa repot.',
         },
         staff: {
             title: 'Staff access only.',
@@ -39,16 +57,19 @@ export default function AuthLayout() {
         <div className="min-h-screen bg-navy-900 flex">
             <div className="hidden lg:flex w-[45%] relative bg-navy-800 overflow-hidden">
                 <img
-                    src="/images/hush-co-cafe.png"
+                    src={authBgSrc}
                     alt="Hush & Co. cafe"
                     className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-overlay"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy-900/95 via-navy-900/50 to-transparent" />
                 <div className="relative z-10 flex flex-col justify-between p-12 w-full h-full">
-                    <Link to="/" className="flex items-center gap-3 hover:opacity-90 transition inline-flex self-start">
-                        <div className="h-9 w-9 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-navy-800">
+                    <Link
+                        to="/"
+                        className="inline-flex items-center gap-3 hover:opacity-90 transition self-start"
+                    >
+                        <div className="h-9 w-9 rounded-full overflow-hidden border border-white/10 shrink-0 bg-navy-800">
                             <img
-                                src="/images/hush-co-logo.png"
+                                src={logoSrc}
                                 alt="Hush & Co"
                                 className="h-full w-full object-cover"
                                 onError={(e) => {
@@ -103,10 +124,13 @@ export default function AuthLayout() {
 
             <div className="flex-1 flex items-center justify-center p-8 bg-cream-100">
                 <div className="w-full max-w-md">
-                    <Link to="/" className="lg:hidden flex items-center justify-center gap-3 mb-8 hover:opacity-90 transition">
-                        <div className="h-9 w-9 rounded-full overflow-hidden border border-navy-900/10 flex-shrink-0 bg-navy-800">
+                    <Link
+                        to="/"
+                        className="lg:hidden flex items-center justify-center gap-3 mb-8 hover:opacity-90 transition"
+                    >
+                        <div className="h-9 w-9 rounded-full overflow-hidden border border-navy-900/10 shrink-0 bg-navy-800">
                             <img
-                                src="/images/hush-co-logo.png"
+                                src={logoSrc}
                                 alt="Hush & Co"
                                 className="h-full w-full object-cover"
                                 onError={(e) => {
@@ -124,17 +148,17 @@ export default function AuthLayout() {
                         {mode === 'register'
                             ? 'Buat akun baru'
                             : mode === 'staff'
-                                ? 'Masuk Staff'
-                                : mode === 'admin'
-                                    ? 'Masuk Admin'
-                                    : 'Selamat datang'}
+                              ? 'Masuk Staff'
+                              : mode === 'admin'
+                                ? 'Masuk Admin'
+                                : 'Selamat datang kembali'}
                     </h2>
                     <p className="text-navy-400 text-sm mb-8">
                         {mode === 'register'
-                            ? 'Daftar dan mulai nikmati pengalaman memesan di Hush & Co.'
+                            ? 'Satu langkah untuk kopi yang lebih menyenangkan.'
                             : mode === 'staff' || mode === 'admin'
-                                ? 'Masuk dengan email dan password Anda.'
-                                : 'Masuk ke akun Hush & Co. untuk mulai memesan.'}
+                              ? 'Masuk dengan email dan password Anda.'
+                              : 'Masuk dan nikmati kopi tanpa antri, langsung dari mejamu.'}
                     </p>
                     <Outlet />
                 </div>

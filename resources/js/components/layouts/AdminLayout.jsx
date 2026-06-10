@@ -16,6 +16,7 @@ import {
     TagIcon,
     UserCircleIcon,
     PhotoIcon,
+    Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -281,6 +282,12 @@ export default function AdminLayout() {
             active: location.pathname === '/admin/menus',
         },
         {
+            path: '/admin/toppings',
+            label: 'Toppings',
+            icon: TagIcon,
+            active: location.pathname === '/admin/toppings',
+        },
+        {
             path: '/admin/tables',
             label: 'Meja & QR',
             icon: TableCellsIcon,
@@ -309,6 +316,12 @@ export default function AdminLayout() {
             label: 'Galeri',
             icon: PhotoIcon,
             active: location.pathname === '/admin/gallery',
+        },
+        {
+            path: '/admin/site-settings',
+            label: 'Pengaturan Situs',
+            icon: Cog6ToothIcon,
+            active: location.pathname === '/admin/site-settings',
         },
         {
             path: '/admin/profile',
@@ -343,9 +356,17 @@ export default function AdminLayout() {
             title: 'Laporan',
             subtitle: 'Pantau performa bisnis dan laporan',
         },
+        '/admin/toppings': {
+            title: 'Topping Manager',
+            subtitle: 'Kelola daftar topping dan harga global',
+        },
         '/admin/gallery': {
             title: 'Kelola Galeri',
             subtitle: 'Atur foto suasana kafe di landing page',
+        },
+        '/admin/site-settings': {
+            title: 'Pengaturan Situs',
+            subtitle: 'Kelola gambar landing page dan auth page.',
         },
         '/admin/profile': {
             title: 'Profil',

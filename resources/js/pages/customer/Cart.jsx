@@ -72,9 +72,11 @@ export default function Cart() {
         );
     }, [orderType, tableId, tableNumber, pickupName]);
 
-    const changeQty = (id, delta) => {
+    const changeQty = (cartId, delta) => {
         const newCart = cart.map((c) =>
-            c.id === id ? { ...c, qty: Math.max(1, c.qty + delta) } : c,
+            c.cart_id === cartId
+                ? { ...c, qty: Math.max(1, c.qty + delta) }
+                : c,
         );
         setCart(newCart);
         try {
@@ -86,8 +88,8 @@ export default function Cart() {
         );
     };
 
-    const removeItem = (id) => {
-        const newCart = cart.filter((c) => c.id !== id);
+    const removeItem = (cartId) => {
+        const newCart = cart.filter((c) => c.cart_id !== cartId);
         setCart(newCart);
         try {
             localStorage.setItem('cart', JSON.stringify(newCart));
@@ -99,7 +101,13 @@ export default function Cart() {
         toast.success('Item dihapus');
     };
 
-    const subtotal = cart.reduce((a, c) => a + c.price * c.qty, 0);
+    const subtotal = cart.reduce((a, c) => {
+        const toppingsExtra = (c.toppings || []).reduce(
+            (s, t) => s + (t.unit_price || 0) * (t.qty || 0),
+            0,
+        );
+        return a + (c.price + toppingsExtra) * c.qty;
+    }, 0);
 
     const handleCheckout = () => {
         if (cart.length === 0) {
@@ -360,7 +368,7 @@ export default function Cart() {
                                     <div className="divide-y divide-cream-200">
                                         {cart.map((item) => (
                                             <div
-                                                key={item.id}
+                                                key={item.cart_id}
                                                 className="flex items-center gap-5 px-6 py-5 hover:bg-cream-50 transition"
                                             >
                                                 <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-navy-800 to-navy-600 flex items-center justify-center text-2xl shrink-0 shadow-sm">
@@ -377,11 +385,49 @@ export default function Cart() {
                                                         )}{' '}
                                                         / item
                                                     </p>
+                                                    {/* Toppings summary */}
+                                                    {item.toppings &&
+                                                        item.toppings.length >
+                                                            0 && (
+                                                            <div className="mt-2 text-xs text-navy-500">
+                                                                {item.toppings.map(
+                                                                    (t) => (
+                                                                        <div
+                                                                            key={
+                                                                                t.topping_id
+                                                                            }
+                                                                            className="flex items-center gap-2"
+                                                                        >
+                                                                            <span className="font-medium">
+                                                                                {
+                                                                                    t.name
+                                                                                }
+                                                                            </span>
+                                                                            <span className="text-navy-400">
+                                                                                ×
+                                                                                {
+                                                                                    t.qty
+                                                                                }
+                                                                            </span>
+                                                                            <span className="ml-2 text-navy-600">
+                                                                                Rp{' '}
+                                                                                {(
+                                                                                    t.unit_price *
+                                                                                    t.qty
+                                                                                ).toLocaleString(
+                                                                                    'id',
+                                                                                )}
+                                                                            </span>
+                                                                        </div>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     <div className="flex items-center gap-2 mt-2">
                                                         <button
                                                             onClick={() =>
                                                                 changeQty(
-                                                                    item.id,
+                                                                    item.cart_id,
                                                                     -1,
                                                                 )
                                                             }
@@ -395,7 +441,7 @@ export default function Cart() {
                                                         <button
                                                             onClick={() =>
                                                                 changeQty(
-                                                                    item.id,
+                                                                    item.cart_id,
                                                                     1,
                                                                 )
                                                             }
@@ -409,13 +455,27 @@ export default function Cart() {
                                                     <p className="text-sm font-bold text-navy-900">
                                                         Rp{' '}
                                                         {(
-                                                            item.price *
+                                                            (item.price +
+                                                                (
+                                                                    item.toppings ||
+                                                                    []
+                                                                ).reduce(
+                                                                    (s, t) =>
+                                                                        s +
+                                                                        (t.unit_price ||
+                                                                            0) *
+                                                                            (t.qty ||
+                                                                                0),
+                                                                    0,
+                                                                )) *
                                                             item.qty
                                                         ).toLocaleString('id')}
                                                     </p>
                                                     <button
                                                         onClick={() =>
-                                                            removeItem(item.id)
+                                                            removeItem(
+                                                                item.cart_id,
+                                                            )
                                                         }
                                                         className="mt-2 w-8 h-8 rounded-lg border border-red-100 text-red-400 flex items-center justify-center hover:bg-red-50 transition"
                                                     >

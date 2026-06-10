@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import ProfileDropdown from '../components/common/ProfileDropdown';
 import AppHeader from '../components/common/AppHeader';
+import useSiteSettings from '../hooks/useSiteSettings';
 
 export default function DashboardLayout({
     title = 'Dashboard',
@@ -24,8 +25,20 @@ export default function DashboardLayout({
     logoPath = '/',
 }) {
     const { user, logout } = useAuth();
+    const { settings } = useSiteSettings();
     const navigate = useNavigate();
     const location = useLocation();
+
+    const resolveSiteImage = (value, fallback) => {
+        if (!value) return fallback;
+        if (value.startsWith('http')) return value;
+        return `${window.location.origin}${value}`;
+    };
+
+    const logoSrc = resolveSiteImage(
+        settings?.logo,
+        '/images/hush-co-logo.png',
+    );
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [time, setTime] = useState(new Date());
@@ -121,18 +134,18 @@ export default function DashboardLayout({
                         className="flex items-center gap-3 hover:opacity-80 transition"
                     >
                         <div className="w-11 h-11 bg-navy-800 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-                                <div className="w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center shrink-0 shadow-sm bg-white">
-                                    <img
-                                        src="/images/hush-co-logo.png"
-                                        alt="Hush & Co"
-                                        className="h-full w-full object-cover"
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                            e.currentTarget.parentElement.innerHTML =
-                                                '<span class="w-full h-full flex items-center justify-center font-playfair text-cream-100">H</span>';
-                                        }}
-                                    />
-                                </div>
+                            <div className="w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center shrink-0 shadow-sm bg-white">
+                                <img
+                                    src={logoSrc}
+                                    alt="Hush & Co"
+                                    className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        e.currentTarget.parentElement.innerHTML =
+                                            '<span class="w-full h-full flex items-center justify-center font-playfair text-cream-100">H</span>';
+                                    }}
+                                />
+                            </div>
                         </div>
                         <h1 className="font-playfair font-bold text-xl text-navy-900 tracking-tight">
                             Hush <span className="text-cream-600">&</span> Co.

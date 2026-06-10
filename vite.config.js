@@ -8,13 +8,16 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
-                'resources/js/app.jsx', 
+                'resources/js/app.jsx',
             ],
             refresh: true,
         }),
         tailwindcss(),
-        react(), 
+        react(),
     ],
+    build: {
+        outDir: 'public/build',
+    },
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],

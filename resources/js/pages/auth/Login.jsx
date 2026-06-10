@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
 import toast from 'react-hot-toast';
 import {
     EnvelopeIcon,
@@ -78,10 +79,21 @@ export default function Login({ variant = 'customer' }) {
         navigate(nextRoute, { replace: true });
     };
 
-    const handleGoogleLogin = () => {
-        toast.error(
-            'Login via Google sementara dinonaktifkan. Silakan gunakan email/password atau lanjut sebagai tamu.',
-        );
+    const handleGoogleLogin = async () => {
+        if (!supabase?.auth?.signInWithOAuth) {
+            toast.error('Google login belum dikonfigurasi.');
+            return;
+        }
+
+        const redirectTo = `${window.location.origin}/supabase-oauth-callback`;
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo },
+        });
+
+        if (error) {
+            toast.error('Login Google gagal: ' + error.message);
+        }
     };
 
     useEffect(() => {

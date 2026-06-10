@@ -156,4 +156,34 @@ class MenuController extends Controller
             'data'    => $menu,
         ]);
     }
+
+    // POST /api/admin/menus/{id}/toppings — assign toppings and pivot data (admin)
+    public function updateToppings(Request $request, $id)
+    {
+        $menu = Menu::findOrFail($id);
+
+        $request->validate([
+            'toppings' => 'required|array',
+            'toppings.*.topping_id' => 'required|exists:toppings,id',
+            'toppings.*.max_allowed' => 'nullable|integer|min:0',
+            'toppings.*.is_required' => 'nullable|boolean',
+            'toppings.*.price_override' => 'nullable|numeric|min:0',
+        ]);
+
+        $syncData = [];
+        foreach ($request->toppings as $t) {
+            $syncData[$t['topping_id']] = [
+                'max_allowed' => isset($t['max_allowed']) ? (int)$t['max_allowed'] : 1,
+                'is_required' => isset($t['is_required']) ? (bool)$t['is_required'] : false,
+                'price_override' => array_key_exists('price_override', $t) ? $t['price_override'] : null,
+            ];
+        }
+
+        $menu->toppings()->sync($syncData);
+
+        return response()->json([
+            'message' => 'Toppings berhasil disimpan untuk menu ini.',
+            'data' => $menu->toppings()->get(),
+        ]);
+    }
 }

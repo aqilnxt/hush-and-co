@@ -34,6 +34,10 @@ return [
         'redirect'      => env('GOOGLE_REDIRECT_URL', rtrim(env('APP_URL', 'http://localhost'), '/') . '/auth/google/callback'),
     ],
 
+    'supabase' => [
+        'url' => env('SUPABASE_URL'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

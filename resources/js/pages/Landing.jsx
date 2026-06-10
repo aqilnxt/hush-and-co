@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LandingProfileDropdown from '../components/common/LandingProfileDropdown';
 import api, { backendBaseUrl } from '../api/axios';
+import useSiteSettings from '../hooks/useSiteSettings';
+import { use3DTilt } from '../hooks/use3DTilt';
 import {
     ArrowRightIcon,
     ArrowRightOnRectangleIcon,
@@ -19,8 +21,7 @@ const useReveal = () => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
                         entry.target.classList.add('visible');
-                    } else {
-                        entry.target.classList.remove('visible');
+                        observer.unobserve(entry.target);
                     }
                 });
             },
@@ -36,24 +37,28 @@ const useReveal = () => {
 export default function Landing() {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
-    const cardName = user ? (user.name.split(' ')[0] || user.name) : 'Aqil';
+    const { settings } = useSiteSettings();
+    const cardName = user ? user.name.split(' ')[0] || user.name : 'Aqil';
     const cardPoints = user ? (user.points ?? 0) : 530;
-    const progressCount = user ? (user.points % 10) : 7;
+    const progressCount = user ? user.points % 10 : 7;
     const remaining = 10 - progressCount;
     const [scrolled, setScrolled] = useState(false);
     const [loading, setLoading] = useState(true);
     const [menuItems, setMenuItems] = useState([]);
     const [galleryItems, setGalleryItems] = useState([]);
 
+    const { cardRef, transform, handlePointerMove, handlePointerLeave } =
+        use3DTilt();
+
     const galleryGridClasses = [
-        "relative col-span-2 row-span-2 overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] min-h-[400px] lg:min-h-0",
-        "relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-auto",
-        "relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-auto",
-        "relative col-span-2 overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-64"
+        'relative col-span-2 row-span-2 overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] min-h-[400px] lg:min-h-0',
+        'relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-auto',
+        'relative overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-auto',
+        'relative col-span-2 overflow-hidden rounded-[32px] bg-[linear-gradient(180deg,#1c2b49_0%,#0f1623_100%)] h-48 lg:h-64',
     ];
 
-    const getImageUrl = (url) => {
-        if (!url) return '';
+    const getImageUrl = (url, fallback = '') => {
+        if (!url) return fallback;
         if (url.startsWith('http://') || url.startsWith('https://')) {
             return url;
         }
@@ -65,6 +70,30 @@ export default function Landing() {
         }
         return `${backendBaseUrl}/storage/${url}`;
     };
+
+    const getSiteImageUrl = (value, fallback) => {
+        if (!value) return fallback;
+        if (value.startsWith('http://') || value.startsWith('https://')) {
+            return value;
+        }
+        if (value.startsWith('/')) {
+            return `${backendBaseUrl}${value}`;
+        }
+        if (value.startsWith('storage/')) {
+            return `${backendBaseUrl}/${value}`;
+        }
+        return `${backendBaseUrl}/storage/${value}`;
+    };
+
+    const logoSrc = getSiteImageUrl(settings?.logo, '/images/hush-co-logo.png');
+    const heroImage = getSiteImageUrl(
+        settings?.hero_image,
+        '/images/hush-co-lifestyle.png',
+    );
+    const aboutImage = getSiteImageUrl(
+        settings?.about_image,
+        '/images/hush-co-about.png',
+    );
     const [menuStats, setMenuStats] = useState({
         total: '12+',
         available: '0',
@@ -104,30 +133,86 @@ export default function Landing() {
         },
     ]);
 
+    // Helper: Indonesian month name
+    const getIndonesianMonth = (monthNumber) => {
+        const months = [
+            'Januari',
+            'Februari',
+            'Maret',
+            'April',
+            'Mei',
+            'Juni',
+            'Juli',
+            'Agustus',
+            'September',
+            'Oktober',
+            'November',
+            'Desember',
+        ];
+        return months[monthNumber - 1] || '';
+    };
+
+    const isTodayMonday = new Date().getDay() === 1;
+
+    const getKopiDesc = () => {
+        if (!user)
+            return 'Setiap 10 kali transaksi selesai, ambil satu minuman favorit tanpa biaya tambahan.';
+        if (user.free_drinks_available > 0)
+            return `Kamu punya ${user.free_drinks_available} kopi gratis siap diklaim!`;
+        return `Progres: ${user.progress_count}/10 transaksi selesai. ${user.remaining_transactions} lagi menuju kopi gratis.`;
+    };
+
+    const getFirstOrderBonusDesc = () => {
+        if (!user)
+            return 'Selesaikan pesanan pertamamu dan dapatkan +10 poin ekstra otomatis. Hanya berlaku sekali.';
+        // Check if user already has a first order bonus in their point history
+        const hasClaimedBonus = user.first_order_bonus_claimed;
+        if (hasClaimedBonus) {
+            return 'Kamu sudah klaim bonus pesanan pertama! Terima kasih atas kepercayaanmu.';
+        }
+        return 'Selesaikan pesanan pertamamu dan dapatkan +10 poin ekstra otomatis. Hanya berlaku sekali.';
+    };
+
+    const getMondayDesc = () =>
+        isTodayMonday
+            ? 'Aktif hari ini! Poin belanjamu dikalikan 2 secara otomatis.'
+            : 'Belanja di hari Senin dan dapatkan poin ganda (2×) secara otomatis.';
+
+    const getDiscountDesc = () => {
+        if (!user)
+            return 'Kumpulkan poin belanja dan gunakan sebagai diskon checkout (1 poin = Rp1.000).';
+        const discountValue = (user.points ?? 0) * 1000;
+        return `Poinmu (${user.points ?? 0} pts) bernilai Rp ${discountValue.toLocaleString('id')} diskon belanja.`;
+    };
+
     const loyaltyPerks = [
         {
             id: 1,
             icon: <span className="text-xl">☕</span>,
-            title: 'Kopi ke-10 gratis',
-            desc: 'Setiap 10 kali transaksi, ambil satu minuman favorit tanpa biaya tambahan.',
+            title: 'Kopi ke-10 Gratis',
+            desc: getKopiDesc(),
+            badge: user && user.free_drinks_available > 0 ? 'Ready!' : null,
         },
         {
             id: 2,
-            icon: <CakeIcon className="h-6 w-6" />,
-            title: 'Birthday treat',
-            desc: 'Datang di hari ulang tahunmu dan nikmati sambutan khusus dari kami.',
+            icon: <GiftIcon className="h-6 w-6" />,
+            title: 'Bonus Pesanan Pertama',
+            desc: getFirstOrderBonusDesc(),
+            badge: user && user.first_order_bonus_claimed ? 'Claimed!' : null,
         },
         {
             id: 3,
             icon: <BoltIcon className="h-6 w-6" />,
-            title: 'Priority order',
-            desc: 'Pesananmu diproses lebih cepat saat loyalty sudah aktif.',
+            title: 'Poin Ganda Senin',
+            desc: getMondayDesc(),
+            badge: isTodayMonday ? 'Aktif Hari Ini!' : null,
         },
         {
             id: 4,
             icon: <GiftIcon className="h-6 w-6" />,
-            title: 'Early access',
-            desc: 'Dapatkan info menu baru dan pastry spesial lebih awal.',
+            title: 'Diskon Pakai Poin',
+            desc: getDiscountDesc(),
+            badge: user && user.points > 0 ? `${user.points} pts` : null,
         },
     ];
 
@@ -174,17 +259,16 @@ export default function Landing() {
     const menuBadges = ['Bestseller', 'Baru', 'Signature'];
 
     const heroStats = [
-        { value: '0', label: 'antrian kasir' },
         { value: menuStats.total || '12+', label: 'pilihan kopi & camilan' },
         { value: '100%', label: 'specialty beans' },
         { value: '07–22', label: 'buka setiap hari' },
+        { value: '∞', label: 'earn points every order' },
     ];
 
     const aboutStats = [
         { value: menuStats.total || '12+', label: 'Pilihan menu' },
-        { value: menuStats.categoryCount || '0', label: 'Kategori' },
         { value: menuStats.available || '0', label: 'Tersedia sekarang' },
-        { value: '0', label: 'Antrian kasir' },
+        { value: menuStats.categoryCount || '0', label: 'Kategori' },
     ];
 
     useEffect(() => {
@@ -193,7 +277,7 @@ export default function Landing() {
         };
 
         handleScroll();
-        window.addEventListener('scroll', handleScroll);
+        window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
@@ -283,6 +367,10 @@ export default function Landing() {
 
     const profileMenuItems = [
         {
+            label: getPrimaryCTAText(),
+            onClick: handleOrderNow,
+        },
+        {
             label: 'Profile',
             onClick: () => {
                 navigate(
@@ -294,12 +382,16 @@ export default function Landing() {
                 );
             },
         },
-        {
-            label: 'Pesanan Saya',
-            onClick: () => {
-                navigate(user?.role === 'staff' ? '/staff/orders' : '/orders');
-            },
-        },
+        ...(user?.role === 'customer'
+            ? [
+                  {
+                      label: 'Pesanan Saya',
+                      onClick: () => {
+                          navigate('/orders');
+                      },
+                  },
+              ]
+            : []),
         {
             label: 'Logout',
             icon: ArrowRightOnRectangleIcon,
@@ -329,9 +421,9 @@ export default function Landing() {
                         aria-label="Kembali ke atas"
                         className="flex items-center gap-3 text-left cursor-pointer transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-cream-300"
                     >
-                        <div className="h-9 w-9 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-navy-800">
+                        <div className="h-9 w-9 rounded-full overflow-hidden border border-white/10 shrink-0 bg-navy-800">
                             <img
-                                src="/images/hush-co-logo.png"
+                                src={logoSrc}
                                 alt="Hush & Co"
                                 className="h-full w-full object-cover"
                                 onError={(e) => {
@@ -409,28 +501,18 @@ export default function Landing() {
                                 </button>
                             </>
                         ) : (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={handleOrderNow}
-                                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-300 shadow-sm ${
-                                        scrolled
-                                            ? 'bg-navy-900 text-cream-100 hover:bg-navy-800'
-                                            : 'bg-cream-100 text-navy-900 hover:bg-cream-200'
-                                    }`}
-                                >
-                                    {getPrimaryCTAText()}
-                                </button>
-                                <LandingProfileDropdown
-                                    name={
-                                        user?.name?.split(' ')[0] || user?.name
-                                    }
-                                    email={user?.email}
-                                    role={user?.role}
-                                    avatar={user?.avatar}
-                                    menuItems={profileMenuItems}
-                                />
-                            </>
+                            <LandingProfileDropdown
+                                name={user?.name?.split(' ')[0] || user?.name}
+                                email={user?.email}
+                                role={user?.role}
+                                avatar={user?.avatar}
+                                menuItems={profileMenuItems}
+                                buttonClassName={`rounded-full px-4 py-2 text-sm font-semibold transition-all duration-300 shadow-sm ${
+                                    scrolled
+                                        ? 'bg-navy-900 text-cream-100 hover:bg-navy-800 hover:text-cream-100'
+                                        : 'bg-cream-100 text-navy-900 hover:bg-cream-200 hover:text-navy-900'
+                                }`}
+                            />
                         )}
                     </div>
                 </div>
@@ -439,7 +521,7 @@ export default function Landing() {
             <main className="pt-0">
                 <section
                     id="hero"
-                    className="relative min-h-[calc(100vh-0px)] overflow-hidden bg-gradient-to-br from-[#0d0a03] via-navy-900 to-navy-800"
+                    className="relative min-h-[calc(100vh-0px)] bg-gradient-to-br from-[#0d0a03] via-navy-900 to-navy-800"
                 >
                     <div className="absolute inset-0 grain-pattern opacity-[0.04] pointer-events-none" />
                     <div className="absolute inset-0 pointer-events-none">
@@ -497,7 +579,7 @@ export default function Landing() {
                                 </button>
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-8 pt-2 border-t border-white/[0.08]">
+                            <div className="grid grid-cols-2 lg:grid-cols-4 items-start gap-8 pt-2 border-t border-white/[0.08]">
                                 {heroStats.map((s) => (
                                     <div key={s.label} className="pt-6">
                                         <p className="font-playfair text-2xl font-medium text-white tracking-[-0.02em]">
@@ -512,9 +594,25 @@ export default function Landing() {
                         </div>
 
                         <div className="relative flex items-center justify-center">
-                            <div className="w-full max-w-[420px] rounded-[40px] border border-white/10 bg-navy-900 shadow-[0_40px_80px_rgba(0,0,0,0.35)] overflow-hidden">
+                            <div
+                                ref={cardRef}
+                                onPointerMove={handlePointerMove}
+                                onPointerLeave={handlePointerLeave}
+                                onPointerCancel={handlePointerLeave}
+                                className="w-full max-w-[420px] rounded-[40px] border border-white/10 bg-navy-900 shadow-[0_40px_80px_rgba(0,0,0,0.35)] overflow-hidden transition-transform duration-300 ease-out"
+                                style={{
+                                    transform: transform,
+                                    transformStyle: 'preserve-3d',
+                                    touchAction: 'pan-y',
+                                }}
+                            >
                                 <div className="relative h-[520px] bg-[linear-gradient(180deg,#1f3253_0%,#111827_100%)] p-8">
-                                    <div className="absolute inset-0 bg-[url('/images/hush-co-lifestyle.png')] bg-cover bg-center opacity-100" />
+                                    <div
+                                        className="absolute inset-0 bg-cover bg-center opacity-100"
+                                        style={{
+                                            backgroundImage: `url('${heroImage}')`,
+                                        }}
+                                    />
                                     <div className="absolute inset-0 bg-gradient-to-t from-navy-900/10 via-transparent to-transparent" />
                                     <div className="relative h-full rounded-[32px] border border-white/10 bg-black/5" />
                                 </div>
@@ -568,9 +666,56 @@ export default function Landing() {
                         </div>
                     </div>
                 </section>
+
+                <section className="bg-cream-200 py-20 lg:py-28">
+                    <div className="max-w-7xl mx-auto px-6 lg:px-12 text-center">
+                        {/* Statement */}
+                        <p className="font-playfair text-[38px] sm:text-[48px] lg:text-[58px] font-medium italic leading-[1.1] tracking-[-0.025em] text-navy-900 max-w-3xl mx-auto">
+                            "Kami tidak terburu-buru.{' '}
+                            <em className="text-cream-600">
+                                Kopinya juga tidak."
+                            </em>
+                        </p>
+
+                        {/* Divider */}
+                        <div className="w-10 h-px bg-cream-400 mx-auto my-8" />
+
+                        {/* Pills */}
+                        <div className="flex items-center justify-center gap-3 flex-wrap">
+                            {[
+                                {
+                                    dot: 'bg-amber-400',
+                                    label: '100% Specialty Beans',
+                                },
+                                {
+                                    dot: 'bg-emerald-400',
+                                    label: 'Buka 07.00–22.00',
+                                },
+                                {
+                                    dot: 'bg-amber-400',
+                                    label: 'Braga, Bandung',
+                                },
+                            ].map((pill) => (
+                                <div
+                                    key={pill.label}
+                                    className="inline-flex items-center gap-2.5 bg-white border border-cream-300 rounded-full px-5 py-2.5"
+                                >
+                                    <span
+                                        className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${pill.dot}`}
+                                    />
+                                    <span className="text-[13px] font-light text-navy-600">
+                                        {pill.label}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
                 <section
                     id="about-section"
                     className="reveal bg-cream-100 py-24 lg:py-32"
+                    style={{ contain: 'layout' }}
                 >
                     <div className="max-w-7xl mx-auto px-6 lg:px-12 grid gap-16 lg:grid-cols-[1.15fr_0.85fr] items-center">
                         <div className="space-y-8">
@@ -590,13 +735,15 @@ export default function Landing() {
                                     penuh rasa.
                                 </p>
                             </div>
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
                                 {aboutStats.map((stat) => (
                                     <div
                                         key={stat.label}
-                                        className="rounded-3xl border border-navy-200 bg-white p-6"
+                                        className={`rounded-3xl border border-navy-200 bg-white p-6 ${stat.label === 'Kategori' ? 'lg:col-span-2 lg:p-10' : ''}`}
                                     >
-                                        <p className="text-3xl font-semibold text-navy-900">
+                                        <p
+                                            className={`text-3xl font-semibold text-navy-900 ${stat.label === 'Kategori' ? 'lg:text-5xl' : ''}`}
+                                        >
                                             {stat.value}
                                         </p>
                                         <p className="mt-3 text-sm uppercase tracking-[0.18em] text-navy-500">
@@ -606,26 +753,22 @@ export default function Landing() {
                                 ))}
                             </div>
                         </div>
-                        <div className="relative overflow-hidden rounded-[40px] bg-navy-900 shadow-[0_40px_80px_rgba(14,26,46,0.22)]">
-                            <div className="aspect-[3/4] bg-[linear-gradient(180deg,#1c2b49_0%,#101821_100%)] p-8">
-                                <div className="relative h-full rounded-[32px] border border-white/10 bg-[url('/images/hush-co-about.png')] bg-cover bg-center">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-navy-900/80 via-transparent to-transparent" />
-                                </div>
-                            </div>
-                            <div className="absolute right-6 top-6 rounded-3xl bg-cream-100 px-5 py-4 text-navy-900 shadow-xl">
-                                <p className="text-xs uppercase tracking-[0.24em] text-navy-500">
-                                    Rating
-                                </p>
-                                <p className="mt-2 text-lg font-semibold">
-                                    4.9 ★
-                                </p>
-                            </div>
+                        <div className="relative rounded-[32px] overflow-hidden shadow-md w-full h-full min-h-[400px]">
+                            <img
+                                src={aboutImage}
+                                alt="Suasana Hush & Co"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                }}
+                            />
                         </div>
                     </div>
                 </section>
                 <section
                     id="menu-section"
                     className="reveal bg-navy-900 py-24 lg:py-32"
+                    style={{ contain: 'layout' }}
                 >
                     <div className="max-w-7xl mx-auto px-6 lg:px-12">
                         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between mb-14">
@@ -668,11 +811,19 @@ export default function Landing() {
                                           <div className="mb-6 h-52 overflow-hidden rounded-[28px] bg-gradient-to-br from-navy-800 via-navy-700 to-navy-600">
                                               {item.image ? (
                                                   <img
-                                                      src={getImageUrl(item.image)}
+                                                      src={getImageUrl(
+                                                          item.image,
+                                                      )}
                                                       alt={item.name}
                                                       className="h-full w-full object-cover"
                                                   />
-                                              ) : null}
+                                              ) : (
+                                                  <div className="h-full w-full flex items-center justify-center">
+                                                      <p className="font-playfair text-2xl font-medium italic text-white/20 text-center px-6">
+                                                          {item.name}
+                                                      </p>
+                                                  </div>
+                                              )}
                                           </div>
                                           <div className="mb-4 inline-flex rounded-full border border-cream-300/20 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.2em] text-cream-300">
                                               {item.category?.name ||
@@ -705,6 +856,7 @@ export default function Landing() {
                 <section
                     id="qr-section"
                     className="reveal bg-cream-200 py-24 lg:py-32"
+                    style={{ contain: 'layout' }}
                 >
                     <div className="max-w-7xl mx-auto px-6 lg:px-12 grid gap-16 lg:grid-cols-[0.95fr_0.9fr] items-center">
                         <div className="space-y-8">
@@ -749,52 +901,94 @@ export default function Landing() {
                                 </p>
                             </div>
                         </div>
-                        <div className="relative rounded-[44px] border border-navy-200/30 bg-navy-900 p-4 shadow-[0_40px_80px_rgba(14,26,46,0.18)]">
-                            <div className="rounded-[40px] bg-cream-100 p-5">
-                                <div className="flex items-center justify-between pb-4">
-                                    <div>
-                                        <p className="text-xs uppercase tracking-[0.24em] text-navy-500">
-                                            Meja
-                                        </p>
-                                        <p className="mt-2 text-2xl font-semibold text-navy-900">
-                                            07
-                                        </p>
-                                    </div>
-                                    <div className="rounded-3xl bg-navy-900 px-3 py-2 text-xs uppercase tracking-[0.2em] text-cream-100">
-                                        QR Order
-                                    </div>
-                                </div>
-                                <div className="rounded-[32px] bg-navy-900 p-5 text-cream-100">
-                                    {menuCards.slice(0, 3).map((menu) => (
-                                        <div
-                                            key={menu.id}
-                                            className="mb-4 flex items-center justify-between text-sm text-cream-100"
-                                        >
-                                            <span>{menu.name}</span>
-                                            <span>
-                                                Rp{' '}
-                                                {Number(
-                                                    menu.price,
-                                                ).toLocaleString('id')}
-                                            </span>
+                        <div className="relative flex justify-center lg:justify-end">
+                            <div className="relative mx-auto w-full max-w-[300px] md:max-w-[260px]">
+                                <div className="absolute inset-x-0 top-1/2 -z-10 h-56 w-3/4 mx-auto translate-y-10 rounded-full bg-navy-900/20 blur-[80px]" />
+                                <div className="relative aspect-9/19.5 w-full">
+                                    <div className="relative h-full w-full rounded-[44px] bg-[#1a1a1a] p-[10px] shadow-[0_32px_64px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)] phone-float">
+                                        <div className="absolute right-[-3px] top-[100px] h-[60px] w-[3px] rounded-r-full bg-[#2a2a2a]" />
+                                        <div className="absolute left-[-3px] top-[90px] h-[38px] w-[3px] rounded-l-full bg-[#2a2a2a]" />
+                                        <div className="absolute left-[-3px] top-[150px] h-[38px] w-[3px] rounded-l-full bg-[#2a2a2a]" />
+                                        <div className="relative h-full w-full overflow-hidden rounded-[36px] bg-[#f8f6f2]">
+                                            <div
+                                                className="pointer-events-none absolute inset-0 z-10 rounded-[36px]"
+                                                style={{
+                                                    background:
+                                                        'linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 40%, transparent 65%)',
+                                                }}
+                                            />
+                                            <div className="absolute left-1/2 top-3 -translate-x-1/2 h-[14px] w-[80px] rounded-full bg-[#0a0a0a]" />
+                                            <div className="absolute inset-x-0 top-0 h-16 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.35),transparent_45%)]" />
+                                            <div className="relative h-full w-full overflow-hidden px-5 pt-7 pb-4">
+                                                <div className="relative flex h-full flex-col justify-between">
+                                                    <div>
+                                                        <div className="flex items-start justify-between gap-4">
+                                                            <div>
+                                                                <p className="text-[10px] uppercase tracking-[0.32em] text-navy-500">
+                                                                    Meja
+                                                                </p>
+                                                                <p className="mt-2 text-2xl font-semibold text-navy-900">
+                                                                    07
+                                                                </p>
+                                                            </div>
+                                                            <span className="rounded-full bg-navy-900 px-3 py-2 text-[10px] uppercase tracking-[0.26em] text-cream-100">
+                                                                QR Order
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="mt-3 rounded-[32px] bg-navy-900 p-5 text-cream-100 shadow-[0_18px_36px_rgba(15,23,42,0.22)]">
+                                                            {menuCards
+                                                                .slice(0, 3)
+                                                                .map((menu) => (
+                                                                    <div
+                                                                        key={
+                                                                            menu.id
+                                                                        }
+                                                                        className="mb-3 flex items-center justify-between text-[11px] leading-snug"
+                                                                    >
+                                                                        <span className="text-cream-100 text-[11px]">
+                                                                            {
+                                                                                menu.name
+                                                                            }
+                                                                        </span>
+                                                                        <span className="font-semibold text-cream-100 text-[11px]">
+                                                                            Rp{' '}
+                                                                            {Number(
+                                                                                menu.price,
+                                                                            ).toLocaleString(
+                                                                                'id',
+                                                                            )}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <button
+                                                            type="button"
+                                                            className="w-full rounded-[28px] bg-navy-900 py-3.5 text-[11px] font-semibold text-cream-100 shadow-lg transition hover:bg-navy-800"
+                                                        >
+                                                            Checkout Pesanan
+                                                        </button>
+                                                        <div className="mt-5 rounded-[32px] border border-navy-200/40 bg-white/90 p-4 text-sm text-navy-800 shadow-sm">
+                                                            <div className="flex items-center gap-2 text-navy-900 font-semibold mb-2">
+                                                                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                                Sedang diproses
+                                                            </div>
+                                                            <p className="text-[11px]">
+                                                                Pesanan akan
+                                                                siap dalam 4
+                                                                menit.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        className="mt-4 w-full rounded-3xl bg-cream-100 py-4 text-sm font-semibold text-navy-900 transition hover:bg-cream-200"
-                                    >
-                                        Checkout Pesanan
-                                    </button>
-                                </div>
-                                <div className="mt-5 rounded-3xl border border-navy-200/40 bg-white/80 p-4 text-sm text-navy-700">
-                                    <div className="flex items-center gap-2 text-navy-900 font-semibold mb-2">
-                                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        Sedang diproses
                                     </div>
-                                    <p>Pesanan akan siap dalam 4 menit.</p>
                                 </div>
                             </div>
-                            <div className="absolute left-1/2 top-3 -translate-x-1/2 h-1.5 w-20 rounded-full bg-cream-200/50" />
                         </div>
                     </div>
                 </section>
@@ -802,6 +996,7 @@ export default function Landing() {
                 <section
                     id="atmosphere-section"
                     className="reveal bg-cream-100 py-24 lg:py-32"
+                    style={{ contain: 'layout' }}
                 >
                     <div className="max-w-7xl mx-auto px-6 lg:px-12">
                         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between mb-14">
@@ -826,16 +1021,24 @@ export default function Landing() {
                                     const gridClass = galleryGridClasses[idx];
                                     if (!item) {
                                         return (
-                                            <div key={`placeholder-${idx}`} className={gridClass}>
+                                            <div
+                                                key={`placeholder-${idx}`}
+                                                className={gridClass}
+                                            >
                                                 <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
                                             </div>
                                         );
                                     }
                                     return (
-                                        <div key={item.id} className={gridClass}>
-                                            <div 
-                                                className="absolute inset-0 bg-cover bg-center opacity-80 animate-reveal" 
-                                                style={{ backgroundImage: `url(${getImageUrl(item.image_url)})` }}
+                                        <div
+                                            key={item.id}
+                                            className={gridClass}
+                                        >
+                                            <div
+                                                className="absolute inset-0 bg-cover bg-center opacity-80 animate-reveal"
+                                                style={{
+                                                    backgroundImage: `url(${getImageUrl(item.image_url)})`,
+                                                }}
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-navy-900/90 via-transparent to-transparent" />
                                             {item.title && (
@@ -885,6 +1088,7 @@ export default function Landing() {
                 <section
                     id="loyalty-section"
                     className="reveal bg-cream-100 py-24 lg:py-32"
+                    style={{ contain: 'layout' }}
                 >
                     <div className="max-w-7xl mx-auto px-6 lg:px-12 grid gap-16 lg:grid-cols-[1fr_0.9fr] items-center">
                         <div className="space-y-8">
@@ -957,14 +1161,16 @@ export default function Landing() {
                             </div>
                             <div className="rounded-[32px] border border-navy-200/40 bg-white p-6">
                                 <p className="text-sm text-navy-500">
-                                    {remaining > 0 
+                                    {remaining > 0
                                         ? `${remaining} poin lagi menuju kopi gratis!`
                                         : 'Selamat! Kamu berhak mendapatkan 1 kopi gratis!'}
                                 </p>
                                 <div className="mt-5 h-4 overflow-hidden rounded-full bg-navy-100">
-                                    <div 
-                                        className="h-full bg-navy-900 transition-all duration-300" 
-                                        style={{ width: `${progressCount * 10}%` }}
+                                    <div
+                                        className="h-full bg-navy-900 transition-all duration-300"
+                                        style={{
+                                            width: `${progressCount * 10}%`,
+                                        }}
                                     />
                                 </div>
                                 <p className="mt-3 text-sm text-navy-700">
@@ -973,16 +1179,23 @@ export default function Landing() {
                             </div>
                             <button
                                 type="button"
-                                onClick={() => navigate(user ? '/menu' : '/register')}
+                                onClick={() =>
+                                    navigate(user ? '/menu' : '/register')
+                                }
                                 className="w-full rounded-full bg-navy-900 px-8 py-4 text-sm font-semibold text-cream-100 transition hover:bg-navy-800"
                             >
-                                {user ? 'Pesan Sekarang & Kumpulkan Poin' : 'Daftar sekarang untuk mulai kumpulkan poin'}
+                                {user
+                                    ? 'Pesan Sekarang & Kumpulkan Poin'
+                                    : 'Daftar sekarang untuk mulai kumpulkan poin'}
                             </button>
                         </div>
                     </div>
                 </section>
 
-                <section className="reveal bg-cream-200 py-24 lg:py-32">
+                <section
+                    className="reveal bg-cream-200 py-24 lg:py-32"
+                    style={{ contain: 'layout' }}
+                >
                     <div className="max-w-7xl mx-auto px-6 lg:px-12 grid gap-8 lg:grid-cols-2">
                         {serviceTypes.map((service) => (
                             <div
@@ -991,14 +1204,20 @@ export default function Landing() {
                             >
                                 <div className="flex h-full flex-col justify-between">
                                     <div>
-                                        <div className={`inline-flex items-center gap-3 text-xs uppercase tracking-[0.24em] mb-6 ${service.id === 'dinein' ? 'text-navy-500' : 'text-cream-300'}`}>
-                                            <span className={`block h-px w-12 ${service.id === 'dinein' ? 'bg-navy-500' : 'bg-cream-300'}`} />
+                                        <div
+                                            className={`inline-flex items-center gap-3 text-xs uppercase tracking-[0.24em] mb-6 ${service.id === 'dinein' ? 'text-navy-500' : 'text-cream-300'}`}
+                                        >
+                                            <span
+                                                className={`block h-px w-12 ${service.id === 'dinein' ? 'bg-navy-500' : 'bg-cream-300'}`}
+                                            />
                                             {service.tag}
                                         </div>
                                         <h3 className="font-playfair text-3xl font-medium mb-4">
                                             {service.title}
                                         </h3>
-                                        <p className={`text-sm leading-relaxed mb-8 ${service.id === 'dinein' ? 'text-navy-600' : 'text-cream-200'}`}>
+                                        <p
+                                            className={`text-sm leading-relaxed mb-8 ${service.id === 'dinein' ? 'text-navy-600' : 'text-cream-200'}`}
+                                        >
                                             {service.desc}
                                         </p>
                                     </div>
@@ -1011,7 +1230,11 @@ export default function Landing() {
                                                 navigate('/menu?type=takeaway');
                                             }
                                         }}
-                                        className="w-full rounded-full bg-cream-100 px-5 py-4 text-sm font-semibold text-navy-900 transition hover:bg-cream-200"
+                                        className={
+                                            service.id === 'dinein'
+                                                ? 'w-full rounded-full bg-navy-900 px-5 py-4 text-sm font-semibold text-cream-100 transition hover:bg-navy-800'
+                                                : 'w-full rounded-full bg-cream-100 px-5 py-4 text-sm font-semibold text-navy-900 transition hover:bg-cream-200'
+                                        }
                                     >
                                         {service.cta}
                                     </button>
@@ -1021,7 +1244,10 @@ export default function Landing() {
                     </div>
                 </section>
 
-                <section className="reveal bg-white py-24 lg:py-32">
+                <section
+                    className="reveal bg-white py-24 lg:py-32"
+                    style={{ contain: 'layout' }}
+                >
                     <div className="max-w-7xl mx-auto px-6 lg:px-12">
                         <div className="text-center mb-14">
                             <span className="text-xs uppercase tracking-[0.24em] text-navy-500">
@@ -1067,8 +1293,9 @@ export default function Landing() {
                 <section
                     id="location-section"
                     className="reveal bg-cream-100 py-24 lg:py-32"
+                    style={{ contain: 'layout' }}
                 >
-                    <div className="max-w-7xl mx-auto px-6 lg:px-12 grid gap-16 lg:grid-cols-[1fr_0.95fr] items-center">
+                    <div className="max-w-7xl mx-auto px-6 lg:px-12 grid gap-16 lg:grid-cols-[1fr_0.95fr] items-start">
                         <div className="space-y-8">
                             <div className="inline-flex items-center gap-3 text-xs uppercase tracking-[0.24em] text-navy-500">
                                 <span className="block h-px w-12 bg-navy-500" />
@@ -1121,52 +1348,35 @@ export default function Landing() {
                                 <ArrowRightIcon className="h-4 w-4" />
                             </button>
                         </div>
-                        <div className="relative overflow-hidden rounded-[40px] bg-navy-900 p-10 shadow-[0_40px_90px_rgba(14,26,46,0.22)]">
-                            <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.08),transparent_55%)]" />
-                            <div className="relative rounded-[32px] bg-navy-800 p-10 text-cream-100">
-                                <div className="mb-8 inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.2em] text-cream-300">
-                                    <svg
-                                        width="20"
-                                        height="20"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-5 w-5 text-cream-100"
-                                    >
-                                        <path
-                                            d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
-                                            stroke="currentColor"
-                                            strokeWidth="1.8"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                        <circle
-                                            cx="12"
-                                            cy="9"
-                                            r="2.5"
-                                            fill="currentColor"
-                                        />
-                                    </svg>
-                                    Lokasi kafe
-                                </div>
-                                <p className="text-2xl font-semibold text-cream-100 mb-4">
-                                    Hush & Co Bandung
+                        <div className="relative rounded-[32px] overflow-hidden h-full min-h-[320px] border border-cream-300 shadow-sm">
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3960.9!2d107.6098!3d-6.9175!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNsKwNTUnMDMuMCJTIDEwN8KwMzYnMzUuMyJF!5e0!3m2!1sid!2sid!4v1234567890"
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0, minHeight: '320px' }}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                title="Lokasi Hush & Co"
+                                className="w-full h-full"
+                            />
+                            <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-sm border border-cream-200">
+                                <p className="text-[10px] uppercase tracking-[0.08em] text-navy-400 mb-0.5">
+                                    Hush & Co · Bandung
                                 </p>
-                                <p className="text-sm text-cream-200 leading-relaxed">
-                                    Jl. Braga No.12, Braga, Kec. Sumur Bandung,
-                                    Kota Bandung. Dekat dengan pusat kreatif dan
-                                    tempat berkumpul favorit.
+                                <p className="text-xs font-medium text-navy-900">
+                                    Jl. Braga No.12, Bandung
                                 </p>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <section className="reveal bg-navy-900 py-24 lg:py-32">
+                <section
+                    className="reveal bg-navy-900 py-24 lg:py-32"
+                    style={{ contain: 'layout' }}
+                >
                     <div className="max-w-7xl mx-auto px-6 lg:px-12 text-center">
-                        <span className="text-xs uppercase tracking-[0.26em] text-cream-400">
-                            Final CTA
-                        </span>
                         <h2 className="mt-4 font-playfair text-4xl lg:text-5xl font-medium text-cream-100 leading-tight">
                             Mejamu sudah menunggu.
                             <br />
@@ -1195,12 +1405,14 @@ export default function Landing() {
             </main>
 
             <style>{`
-                .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.75s ease, transform 0.75s ease; }
+                .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.75s ease, transform 0.75s ease; will-change: transform, opacity; }
                 .reveal.visible { opacity: 1; transform: translateY(0); }
                 .marquee-strip { position: relative; overflow: hidden; }
-                .marquee-track { display: inline-flex; animation: marquee 28s linear infinite; }
+                .marquee-track { display: inline-flex; animation: marquee 28s linear infinite; will-change: transform; }
                 .marquee-track span:last-child { margin-right: 3rem; }
                 @keyframes marquee { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
+                @keyframes phoneFloat { 0%, 100% { transform: translateY(0px) rotate(4deg); } 50% { transform: translateY(-10px) rotate(4deg); } }
+                .phone-float { animation: phoneFloat 4s ease-in-out infinite; will-change: transform; }
                 .grain-pattern { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.06' d='M0 20h120M0 40h120M0 60h120M0 80h120M0 100h120'/%3E%3C/svg%3E"); }
             `}</style>
         </div>

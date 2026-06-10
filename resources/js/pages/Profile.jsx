@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
@@ -29,6 +29,38 @@ function formatDate(value) {
     });
 }
 
+const getPointTier = (points = 0) => {
+    const pts = Number(points) || 0;
+    if (pts >= 500) {
+        return { label: 'Gold', classes: 'bg-yellow-100 text-yellow-800' };
+    }
+    if (pts >= 100) {
+        return { label: 'Silver', classes: 'bg-navy-100 text-navy-900' };
+    }
+    return { label: 'Bronze', classes: 'bg-cream-200 text-navy-900' };
+};
+
+const getPointProgress = (points = 0) => {
+    const pts = Number(points) || 0;
+    if (pts >= 500) {
+        return 100;
+    }
+    if (pts >= 100) {
+        return Math.round(((pts - 100) / 400) * 100);
+    }
+    return Math.round((pts / 100) * 100);
+};
+
+const getNextTierText = (points = 0) => {
+    const pts = Number(points) || 0;
+    if (pts >= 500) {
+        return 'Sudah berada di tier tertinggi';
+    }
+    const next = pts >= 100 ? 500 : 100;
+    const remaining = next - pts;
+    return `${remaining} poin lagi ke tier berikutnya`;
+};
+
 export default function Profile() {
     const { user, setUser } = useAuth();
     const [lastError, setLastError] = useState(null);
@@ -37,6 +69,7 @@ export default function Profile() {
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
+        birth_date: user?.birth_date || '',
     });
     const [avatarFile, setAvatarFile] = useState(null);
     const [avatarPreview, setAvatarPreview] = useState(user?.avatar || null);
@@ -67,6 +100,11 @@ export default function Profile() {
         () => formatDate(user?.created_at),
         [user?.created_at],
     );
+
+    const userPoints = Number(user?.points) || 0;
+    const pointTier = getPointTier(userPoints);
+    const pointProgress = getPointProgress(userPoints);
+    const nextTierText = getNextTierText(userPoints);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -121,6 +159,9 @@ export default function Profile() {
             const payload = new FormData();
             payload.append('name', formData.name);
             payload.append('email', formData.email);
+            if (formData.birth_date) {
+                payload.append('birth_date', formData.birth_date);
+            }
             if (avatarFile) {
                 payload.append('avatar', avatarFile);
             }
@@ -164,11 +205,21 @@ export default function Profile() {
         setFormData({
             name: user?.name || '',
             email: user?.email || '',
+            birth_date: user?.birth_date || '',
         });
         setAvatarFile(null);
         setAvatarPreview(user?.avatar || null);
         setErrors({});
         setIsEditing(false);
+    };
+
+    const handleStartEdit = () => {
+        setFormData({
+            name: user?.name || '',
+            email: user?.email || '',
+            birth_date: user?.birth_date || '',
+        });
+        setIsEditing(true);
     };
 
     return (
@@ -195,7 +246,7 @@ export default function Profile() {
                         {!isEditing ? (
                             <button
                                 type="button"
-                                onClick={() => setIsEditing(true)}
+                                onClick={handleStartEdit}
                                 className="inline-flex items-center gap-2 rounded-full bg-navy-900 px-5 py-3 text-sm font-semibold text-cream-100 transition hover:bg-navy-800"
                             >
                                 <SparklesIcon className="w-4 h-4" />
@@ -239,10 +290,11 @@ export default function Profile() {
             )}
 
             {isEditing ? (
-                <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
-                    <aside className="rounded-[40px] border border-cream-300 bg-cream-50 p-6 shadow-sm">
-                        <div className="flex flex-col items-center gap-5 text-center">
-                            <div className="relative h-32 w-32 overflow-hidden rounded-full border border-cream-300 bg-navy-900 shadow-sm">
+                <div className="grid gap-6 xl:grid-cols-[320px_1fr] items-start">
+                    <aside className="rounded-[40px] border border-cream-300 bg-cream-50 shadow-sm overflow-hidden self-start">
+                        <div className="bg-navy-900 h-20" />
+                        <div className="p-6 pt-12 pb-6 text-center">
+                            <div className="mx-auto -mt-14 h-28 w-28 overflow-hidden rounded-full ring-4 ring-white border border-cream-200 bg-navy-900 shadow-sm">
                                 {avatarPreview || user?.avatar ? (
                                     <img
                                         src={avatarPreview || user.avatar}
@@ -259,7 +311,7 @@ export default function Profile() {
                                     </div>
                                 )}
                             </div>
-                            <div className="space-y-2">
+                            <div className="mt-4 space-y-2">
                                 <p className="text-xl font-semibold text-navy-900">
                                     {user?.name || 'Nama tidak tersedia'}
                                 </p>
@@ -267,18 +319,42 @@ export default function Profile() {
                                     {roleLabel}
                                 </p>
                             </div>
-                            <div className="w-full rounded-[32px] bg-white p-4 text-left">
-                                <p className="text-xs uppercase tracking-[0.2em] text-navy-400 mb-2">
-                                    Avatar Profil
-                                </p>
-                                <p className="text-sm text-navy-600 leading-relaxed">
-                                    Unggah foto untuk ikon profil. Semua role
-                                    bisa mengubah avatar sendiri.
-                                </p>
+                            <div className="mt-6 grid grid-cols-3 gap-3 text-center">
+                                <div className="rounded-[24px] bg-white p-3">
+                                    <p className="text-[10px] uppercase tracking-[0.24em] text-navy-400">
+                                        POIN
+                                    </p>
+                                    <p className="mt-2 text-sm font-semibold text-navy-900">
+                                        {userPoints}
+                                    </p>
+                                </div>
+                                <div className="rounded-[24px] bg-white p-3">
+                                    <p className="text-[10px] uppercase tracking-[0.24em] text-navy-400">
+                                        ROLE
+                                    </p>
+                                    <p className="mt-2 text-sm font-semibold text-navy-900">
+                                        {roleLabel}
+                                    </p>
+                                </div>
+                                <div className="rounded-[24px] bg-white p-3">
+                                    <p className="text-[10px] uppercase tracking-[0.24em] text-navy-400">
+                                        SEJAK
+                                    </p>
+                                    <p className="mt-2 text-sm font-semibold text-navy-900 leading-tight">
+                                        {user?.created_at
+                                            ? new Date(
+                                                  user.created_at,
+                                              ).toLocaleDateString('id', {
+                                                  year: 'numeric',
+                                              })
+                                            : '—'}
+                                    </p>
+                                </div>
                             </div>
+                            <div className="mt-6 border-t border-cream-200" />
                             <label
                                 htmlFor="avatar"
-                                className="inline-flex items-center gap-2 rounded-full border border-navy-900/10 bg-white px-4 py-3 text-sm font-semibold text-navy-900 transition hover:bg-navy-50 cursor-pointer"
+                                className="mt-5 inline-flex items-center gap-2 rounded-full border border-navy-900/10 bg-white px-4 py-3 text-sm font-semibold text-navy-900 transition hover:bg-navy-50 cursor-pointer"
                             >
                                 <PhotoIcon className="h-4 w-4" />
                                 Pilih Gambar
@@ -291,7 +367,7 @@ export default function Profile() {
                                 className="sr-only"
                             />
                             {errors.avatar && (
-                                <p className="text-xs text-red-600">
+                                <p className="mt-2 text-xs text-red-600">
                                     {errors.avatar}
                                 </p>
                             )}
@@ -347,14 +423,36 @@ export default function Profile() {
                                     </p>
                                 )}
                             </div>
+                            <div>
+                                <label className="text-xs uppercase tracking-[0.2em] text-navy-400 font-medium block mb-2">
+                                    Tanggal Lahir
+                                </label>
+                                <input
+                                    type="date"
+                                    name="birth_date"
+                                    value={formData.birth_date}
+                                    onChange={handleChange}
+                                    className={`w-full rounded-3xl border px-4 py-3 text-sm font-medium bg-white transition focus:outline-none ${
+                                        errors.birth_date
+                                            ? 'border-red-400 focus:border-red-500'
+                                            : 'border-cream-300 focus:border-navy-400'
+                                    }`}
+                                />
+                                {errors.birth_date && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {errors.birth_date}
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </section>
                 </div>
             ) : (
-                <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
-                    <aside className="rounded-[40px] border border-cream-300 bg-cream-50 p-6 shadow-sm">
-                        <div className="flex flex-col items-center gap-5 text-center">
-                            <div className="relative h-28 w-28 overflow-hidden rounded-full border border-cream-300 bg-navy-900 shadow-sm">
+                <div className="grid gap-6 xl:grid-cols-[320px_1fr] items-start">
+                    <aside className="rounded-[40px] border border-cream-300 bg-cream-50 shadow-sm overflow-hidden self-start">
+                        <div className="bg-navy-900 h-20" />
+                        <div className="p-6 pt-12 pb-6 text-center">
+                            <div className="mx-auto -mt-14 h-28 w-28 overflow-hidden rounded-full ring-4 ring-white border border-cream-200 bg-navy-900 shadow-sm">
                                 {user?.avatar ? (
                                     <img
                                         src={user.avatar}
@@ -371,7 +469,7 @@ export default function Profile() {
                                     </div>
                                 )}
                             </div>
-                            <div className="space-y-2">
+                            <div className="mt-4 space-y-2">
                                 <p className="text-xl font-semibold text-navy-900">
                                     {user?.name || 'Nama tidak tersedia'}
                                 </p>
@@ -379,15 +477,39 @@ export default function Profile() {
                                     {roleLabel}
                                 </p>
                             </div>
-                            <div className="w-full rounded-[32px] bg-white p-4 text-left">
-                                <p className="text-xs uppercase tracking-[0.2em] text-navy-400 mb-2">
-                                    Ringkasan akun
-                                </p>
-                                <p className="text-sm text-navy-600 leading-relaxed">
-                                    Lihat informasi email, role, dan provider
-                                    Anda di panel ini.
-                                </p>
+                            <div className="mt-6 grid grid-cols-3 gap-3 text-center">
+                                <div className="rounded-[24px] bg-white p-3">
+                                    <p className="text-[10px] uppercase tracking-[0.24em] text-navy-400">
+                                        POIN
+                                    </p>
+                                    <p className="mt-2 text-sm font-semibold text-navy-900">
+                                        {userPoints}
+                                    </p>
+                                </div>
+                                <div className="rounded-[24px] bg-white p-3">
+                                    <p className="text-[10px] uppercase tracking-[0.24em] text-navy-400">
+                                        ROLE
+                                    </p>
+                                    <p className="mt-2 text-sm font-semibold text-navy-900">
+                                        {roleLabel}
+                                    </p>
+                                </div>
+                                <div className="rounded-[24px] bg-white p-3">
+                                    <p className="text-[10px] uppercase tracking-[0.24em] text-navy-400">
+                                        SEJAK
+                                    </p>
+                                    <p className="mt-2 text-sm font-semibold text-navy-900 leading-tight">
+                                        {user?.created_at
+                                            ? new Date(
+                                                  user.created_at,
+                                              ).toLocaleDateString('id', {
+                                                  year: 'numeric',
+                                              })
+                                            : '—'}
+                                    </p>
+                                </div>
                             </div>
+                            <div className="mt-6 border-t border-cream-200" />
                         </div>
                     </aside>
 
@@ -405,20 +527,28 @@ export default function Profile() {
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => setIsEditing(true)}
+                                    onClick={handleStartEdit}
                                     className="inline-flex items-center gap-2 rounded-full bg-navy-900 px-5 py-3 text-sm font-semibold text-cream-100 transition hover:bg-navy-800"
                                 >
                                     <SparklesIcon className="w-4 h-4" />
                                     Edit
                                 </button>
                             </div>
-                            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 <div className="rounded-[32px] bg-cream-50 p-5">
                                     <p className="text-xs uppercase tracking-[0.2em] text-navy-400">
                                         Email
                                     </p>
                                     <p className="mt-2 text-sm font-medium text-navy-900 truncate">
                                         {user?.email || '—'}
+                                    </p>
+                                </div>
+                                <div className="rounded-[32px] bg-cream-50 p-5">
+                                    <p className="text-xs uppercase tracking-[0.2em] text-navy-400">
+                                        Tanggal Lahir
+                                    </p>
+                                    <p className="mt-2 text-sm font-medium text-navy-900">
+                                        {formatDate(user?.birth_date)}
                                     </p>
                                 </div>
                                 <div className="rounded-[32px] bg-cream-50 p-5">
@@ -448,56 +578,98 @@ export default function Profile() {
                             </div>
                         </div>
 
-                        <div className="rounded-[40px] border border-cream-300 bg-white p-6 shadow-sm">
-                            <div className="flex items-center gap-3 text-navy-900 mb-4">
-                                <EnvelopeIcon className="w-5 h-5 text-navy-500" />
-                                <p className="text-sm font-semibold">Kontak</p>
-                            </div>
-                            <div className="grid gap-4">
-                                <div className="rounded-[32px] bg-cream-50 p-5">
-                                    <p className="text-xs uppercase tracking-[0.2em] text-navy-400">
-                                        Alamat email
-                                    </p>
-                                    <p className="mt-2 text-sm font-medium text-navy-900">
-                                        {user?.email || '—'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
                         {/* Riwayat Poin */}
                         <div className="rounded-[40px] border border-cream-300 bg-white p-6 shadow-sm">
-                            <div className="flex items-center gap-3 text-navy-900 mb-6">
-                                <span className="text-xl">✨</span>
-                                <p className="text-sm font-semibold">Riwayat Poin Loyalitas</p>
-                            </div>
-                            {loadingLogs ? (
-                                <div className="py-8 flex justify-center">
-                                    <div className="w-5 h-5 border-2 border-navy-800 border-t-transparent rounded-full animate-spin" />
+                            <div className="flex flex-col gap-6">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <p className="text-xs uppercase tracking-[0.24em] text-navy-400">
+                                            Total Poin
+                                        </p>
+                                        <p className="text-4xl font-semibold text-navy-900 mt-2">
+                                            {userPoints}
+                                        </p>
+                                    </div>
+                                    <div
+                                        className={`inline-flex items-center rounded-full px-3 py-2 text-sm font-semibold ${pointTier.classes}`}
+                                    >
+                                        {pointTier.label}
+                                    </div>
                                 </div>
-                            ) : pointLogs.length === 0 ? (
-                                <div className="py-8 text-center text-xs text-navy-400 font-medium">
-                                    Belum ada riwayat poin. Poin akan masuk setelah pesanan selesai dan lunas.
+
+                                <div className="space-y-3">
+                                    <div className="h-2 overflow-hidden rounded-full bg-cream-200">
+                                        <div
+                                            className="h-full rounded-full bg-navy-900"
+                                            style={{
+                                                width: `${Math.max(pointProgress, 3)}%`,
+                                            }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-navy-500">
+                                        {nextTierText}
+                                    </p>
                                 </div>
-                            ) : (
-                                <div className="space-y-4 max-h-72 overflow-y-auto pr-2 divide-y divide-cream-100">
-                                    {pointLogs.map((log) => (
-                                        <div key={log.id} className="flex justify-between items-center text-xs pt-3 first:pt-0">
-                                            <div>
-                                                <p className="font-semibold text-navy-800">
-                                                    {log.type === 'earn' ? '☕ Dapatkan Poin' : '🛍️ Tukarkan Poin'}
-                                                </p>
-                                                <p className="text-navy-400 mt-1">
-                                                    Order #HSH-{String(log.order_id).padStart(4, '0')} · {new Date(log.created_at).toLocaleDateString('id', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                </p>
+
+                                {loadingLogs ? (
+                                    <div className="py-8 flex justify-center">
+                                        <div className="w-5 h-5 border-2 border-navy-800 border-t-transparent rounded-full animate-spin" />
+                                    </div>
+                                ) : pointLogs.length === 0 ? (
+                                    <div className="py-8 flex flex-col items-center justify-center gap-3 text-center text-sm text-navy-500">
+                                        <SparklesIcon className="w-10 h-10 text-yellow-500" />
+                                        <p className="font-semibold text-navy-900">
+                                            Belum ada poin.
+                                        </p>
+                                        <p>
+                                            Selesaikan pesanan pertamamu untuk
+                                            mulai mengumpulkan poin.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4 max-h-72 overflow-y-auto pr-2 divide-y divide-cream-100">
+                                        {pointLogs.map((log) => (
+                                            <div
+                                                key={log.id}
+                                                className="flex justify-between items-center text-xs pt-3 first:pt-0"
+                                            >
+                                                <div>
+                                                    <p className="font-semibold text-navy-800">
+                                                        {log.type === 'earn'
+                                                            ? '☕ Dapatkan Poin'
+                                                            : '🛍️ Tukarkan Poin'}
+                                                    </p>
+                                                    <p className="text-navy-400 mt-1">
+                                                        Order #HSH-
+                                                        {String(
+                                                            log.order_id,
+                                                        ).padStart(4, '0')}{' '}
+                                                        ·{' '}
+                                                        {new Date(
+                                                            log.created_at,
+                                                        ).toLocaleDateString(
+                                                            'id',
+                                                            {
+                                                                day: '2-digit',
+                                                                month: 'short',
+                                                                year: 'numeric',
+                                                            },
+                                                        )}
+                                                    </p>
+                                                </div>
+                                                <span
+                                                    className={`font-bold text-sm ${log.points_change > 0 ? 'text-green-600' : 'text-red-500'}`}
+                                                >
+                                                    {log.points_change > 0
+                                                        ? `+${log.points_change}`
+                                                        : log.points_change}{' '}
+                                                    pts
+                                                </span>
                                             </div>
-                                            <span className={`font-bold text-sm ${log.points_change > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                                {log.points_change > 0 ? `+${log.points_change}` : log.points_change} pts
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

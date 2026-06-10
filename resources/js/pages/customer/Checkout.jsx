@@ -22,11 +22,19 @@ export default function Checkout() {
     const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     const orderInfo = JSON.parse(localStorage.getItem('orderInfo') || '{}');
     const tableNumber = orderInfo.tableNumber || orderInfo.tableId || '';
-    const subtotal = cart.reduce((a, c) => a + c.price * c.qty, 0);
+    const subtotal = cart.reduce((a, c) => {
+        const toppingsExtra = (c.toppings || []).reduce(
+            (s, t) => s + (t.unit_price || 0) * (t.qty || 0),
+            0,
+        );
+        return a + (c.price + toppingsExtra) * c.qty;
+    }, 0);
 
     const maxPointsPossible = Math.floor(subtotal / 1000);
     const pointsAvailable = user?.points || 0;
-    const pointsToUse = usePoints ? Math.min(pointsAvailable, maxPointsPossible) : 0;
+    const pointsToUse = usePoints
+        ? Math.min(pointsAvailable, maxPointsPossible)
+        : 0;
     const pointsDiscount = pointsToUse * 1000;
     const finalTotal = subtotal - pointsDiscount;
 
@@ -59,9 +67,13 @@ export default function Checkout() {
             const payload = {
                 order_type: orderInfo.orderType,
                 items: cart.map((c) => ({
-                    menu_id: c.id,
+                    menu_id: c.menu_id,
                     quantity: c.qty,
                     notes: null,
+                    toppings: (c.toppings || []).map((t) => ({
+                        topping_id: t.topping_id,
+                        qty: t.qty,
+                    })),
                 })),
                 use_points: usePoints,
             };
@@ -338,13 +350,21 @@ export default function Checkout() {
                                                 Gunakan Poin Loyalitas
                                             </p>
                                             <p className="text-xs text-navy-400 mt-1 leading-relaxed">
-                                                Kamu memiliki {user.points} poin. Gunakan {pointsToUse} poin untuk mendapatkan potongan Rp {pointsDiscount.toLocaleString('id')}.
+                                                Kamu memiliki {user.points}{' '}
+                                                poin. Gunakan {pointsToUse} poin
+                                                untuk mendapatkan potongan Rp{' '}
+                                                {pointsDiscount.toLocaleString(
+                                                    'id',
+                                                )}
+                                                .
                                             </p>
                                         </div>
                                         <input
                                             type="checkbox"
                                             checked={usePoints}
-                                            onChange={(e) => setUsePoints(e.target.checked)}
+                                            onChange={(e) =>
+                                                setUsePoints(e.target.checked)
+                                            }
                                             className="w-5 h-5 rounded border-cream-300 text-navy-800 focus:ring-navy-800 cursor-pointer shrink-0"
                                         />
                                     </div>
@@ -370,7 +390,9 @@ export default function Checkout() {
                                     <div className="space-y-2 md:space-y-3 mb-4">
                                         {cart.map((item) => (
                                             <div
-                                                key={item.id}
+                                                key={
+                                                    item.cart_id || item.menu_id
+                                                }
                                                 className="flex items-center gap-2 md:gap-3 text-xs md:text-sm"
                                             >
                                                 <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-navy-100 flex shrink-0 items-center justify-center text-base md:text-lg">
@@ -383,11 +405,47 @@ export default function Checkout() {
                                                     <p className="text-xs text-navy-400">
                                                         {item.qty}× item
                                                     </p>
+                                                    {item.toppings &&
+                                                        item.toppings.length >
+                                                            0 && (
+                                                            <div className="text-xs text-navy-400 mt-1">
+                                                                {item.toppings.map(
+                                                                    (t) => (
+                                                                        <div
+                                                                            key={
+                                                                                t.topping_id
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                t.name
+                                                                            }{' '}
+                                                                            ×
+                                                                            {
+                                                                                t.qty
+                                                                            }
+                                                                        </div>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        )}
                                                 </div>
                                                 <span className="text-navy-800 font-medium whitespace-nowrap text-xs md:text-sm">
                                                     Rp{' '}
                                                     {(
-                                                        item.price * item.qty
+                                                        ((item.price || 0) +
+                                                            (
+                                                                item.toppings ||
+                                                                []
+                                                            ).reduce(
+                                                                (s, t) =>
+                                                                    s +
+                                                                    (t.unit_price ||
+                                                                        0) *
+                                                                        (t.qty ||
+                                                                            0),
+                                                                0,
+                                                            )) *
+                                                        item.qty
                                                     ).toLocaleString('id')}
                                                 </span>
                                             </div>
@@ -396,16 +454,22 @@ export default function Checkout() {
 
                                     <div className="border-t border-cream-200 pt-4 space-y-2">
                                         <div className="flex justify-between items-center text-xs md:text-sm">
-                                            <span className="text-navy-400">Subtotal</span>
+                                            <span className="text-navy-400">
+                                                Subtotal
+                                            </span>
                                             <span className="text-navy-800 font-medium">
-                                                Rp {subtotal.toLocaleString('id')}
+                                                Rp{' '}
+                                                {subtotal.toLocaleString('id')}
                                             </span>
                                         </div>
                                         {pointsDiscount > 0 && (
                                             <div className="flex justify-between items-center text-xs md:text-sm text-green-600">
                                                 <span>Diskon Poin</span>
                                                 <span className="font-medium">
-                                                    − Rp {pointsDiscount.toLocaleString('id')}
+                                                    − Rp{' '}
+                                                    {pointsDiscount.toLocaleString(
+                                                        'id',
+                                                    )}
                                                 </span>
                                             </div>
                                         )}
@@ -414,7 +478,10 @@ export default function Checkout() {
                                                 Total Akhir
                                             </span>
                                             <span className="text-lg md:text-xl font-bold text-navy-900">
-                                                Rp {finalTotal.toLocaleString('id')}
+                                                Rp{' '}
+                                                {finalTotal.toLocaleString(
+                                                    'id',
+                                                )}
                                             </span>
                                         </div>
                                     </div>

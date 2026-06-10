@@ -10,11 +10,14 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\GalleryItemController;
+use App\Http\Controllers\Api\SiteSettingController;
+use App\Http\Controllers\Api\ToppingController;
 
 // ── PUBLIC ROUTES ──
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login',    [AuthController::class, 'login']);
+    Route::post('/supabase/google', [AuthController::class, 'loginWithSupabaseGoogle']);
 });
 
 Route::get('/categories',              [CategoryController::class, 'index']);
@@ -25,6 +28,9 @@ Route::get('/tables/number/{number}',  [TableController::class, 'findByNumber'])
 Route::get('/tables/{id}',             [TableController::class, 'show']);
 Route::post('/orders',                 [OrderController::class, 'store']);
 Route::get('/gallery',                 [GalleryItemController::class, 'index']);
+Route::get('/site-settings',            [SiteSettingController::class, 'index']);
+Route::get('/menus/{id}/toppings',     [ToppingController::class, 'forMenu']);
+Route::get('/toppings',                [ToppingController::class, 'index']);
 
 // ── PROTECTED ROUTES ──
 Route::middleware('auth:sanctum')->group(function () {
@@ -78,5 +84,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/admin/gallery',        [GalleryItemController::class, 'store']);
         Route::put('/admin/gallery/{id}',    [GalleryItemController::class, 'update']);
         Route::delete('/admin/gallery/{id}', [GalleryItemController::class, 'destroy']);
+        Route::post('/admin/site-settings/{key}', [SiteSettingController::class, 'update']);
+        Route::post('/admin/menus/{id}/toppings', [MenuController::class, 'updateToppings']);
+        // Toppings (admin)
+        Route::get('/admin/toppings', [ToppingController::class, 'index']);
+        Route::post('/admin/toppings', [ToppingController::class, 'store']);
+        Route::put('/admin/toppings/{id}', [ToppingController::class, 'update']);
+        Route::delete('/admin/toppings/{id}', [ToppingController::class, 'destroy']);
     });
 });

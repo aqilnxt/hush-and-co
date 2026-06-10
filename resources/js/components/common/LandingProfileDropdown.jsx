@@ -14,6 +14,7 @@ export default function LandingProfileDropdown({
     role,
     avatar,
     menuItems = [],
+    buttonClassName = '',
 }) {
     const [open, setOpen] = useState(false);
     const ref = useRef(null);
@@ -49,7 +50,7 @@ export default function LandingProfileDropdown({
             <button
                 type="button"
                 onClick={() => setOpen((value) => !value)}
-                className="flex items-center justify-between gap-3 rounded-full border border-cream-300/70 bg-white py-1 pl-1 pr-2.5 shadow-sm transition-shadow duration-200 hover:shadow-md focus:outline-none"
+                className={`flex items-center justify-between gap-3 rounded-full border border-cream-300/70 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md focus:outline-none ${buttonClassName}`}
             >
                 <div className="flex items-center gap-3 min-w-0">
                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-navy-900 text-cream-200 font-playfair text-[11px] font-semibold overflow-hidden">

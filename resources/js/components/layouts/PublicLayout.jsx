@@ -1,5 +1,6 @@
 import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
+import useSiteSettings from '../../hooks/useSiteSettings';
 
 function InstagramIcon(props) {
     return (
@@ -158,6 +159,19 @@ function WhatsAppIcon(props) {
 }
 
 export default function PublicLayout() {
+    const { settings } = useSiteSettings();
+
+    const resolveSiteImage = (value, fallback) => {
+        if (!value) return fallback;
+        if (value.startsWith('http')) return value;
+        return `${window.location.origin}${value}`;
+    };
+
+    const logoSrc = resolveSiteImage(
+        settings?.logo,
+        '/images/hush-co-logo.png',
+    );
+
     return (
         <div className="min-h-screen bg-cream-100 text-navy-900 font-sans">
             <Outlet />
@@ -170,9 +184,9 @@ export default function PublicLayout() {
                             className="flex items-center gap-3 text-left transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-cream-300"
                             aria-label="Kembali ke beranda Hush & Co"
                         >
-                            <div className="h-9 w-9 rounded-full overflow-hidden border border-white/10 flex-shrink-0 bg-navy-800">
+                            <div className="h-9 w-9 rounded-full overflow-hidden border border-white/10 shrink-0 bg-navy-800">
                                 <img
-                                    src="/images/hush-co-logo.png"
+                                    src={logoSrc}
                                     alt="Hush & Co"
                                     className="h-full w-full object-cover"
                                     onError={(e) => {
@@ -187,8 +201,7 @@ export default function PublicLayout() {
                             </span>
                         </Link>
                         <p className="mt-3 max-w-xs text-sm leading-relaxed text-navy-600">
-                            Premium specialty coffee Bandung, di mana setiap
-                            kunjungan terasa seperti jeda yang hangat.
+                            Kopi pelan-pelan, di tengah Bandung.
                         </p>
                         <div className="flex items-center gap-3 text-sm text-navy-600">
                             <span>Sosial</span>
@@ -292,15 +305,15 @@ export default function PublicLayout() {
                     <div className="rounded-[32px] bg-navy-900 p-8 lg:p-12 text-cream-100 shadow-xl relative overflow-hidden">
                         {/* Subtle glow effect */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(circle,rgba(255,255,255,0.03),transparent_70%)] pointer-events-none" />
-                        
+
                         <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between relative z-10">
                             <div className="space-y-3">
                                 <p className="text-xs uppercase tracking-[0.26em] text-cream-300 font-semibold">
-                                    Bergabung dengan suasana
+                                    Jangan Ketinggalan
                                 </p>
                                 <p className="max-w-2xl text-sm md:text-base leading-relaxed text-cream-200/90 font-light">
-                                    Dapatkan kabar menu baru, acara kopi, dan
-                                    keuntungan loyalty langsung di inboxmu.
+                                    Menu baru, promo, dan kabar dari dapur —
+                                    langsung ke inboxmu.
                                 </p>
                             </div>
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full lg:w-auto">
