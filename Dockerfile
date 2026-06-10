@@ -30,5 +30,16 @@ RUN npm ci && npm run build && npm prune --omit=dev
 RUN mkdir -p storage/framework/{sessions,views,cache,testing} storage/logs bootstrap/cache && chmod -R a+rw storage
 RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
 
-# Start command
-CMD ["php", "artisan", "migrate", "--force", "&&", "php", "artisan", "storage:link", "&&", "php", "artisan", "serve", "--host=0.0.0.0", "--port=$PORT"]
+# Copy entrypoint script
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Expose port
+EXPOSE 8000
+
+# Healthcheck
+HEALTHCHECK --interval=15s --timeout=10s --start-period=60s --retries=5 \
+    CMD php -r "exit(file_get_contents('http://localhost:' . getenv('PORT', 8000)) !== false ? 0 : 1);" || exit 1
+
+# Use entrypoint script
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
