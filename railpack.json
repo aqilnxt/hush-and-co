@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.railpack.com",
   "packages": {
-    "php": "8.4"
+    "php": "8.3"
   },
-  "phpExtensions": ["gd"]
+  "phpExtensions": ["bcmath", "curl", "dom", "fileinfo", "filter", "gd", "hash", "mbstring", "openssl", "pdo", "pdo_mysql", "session", "tokenizer", "xml", "zip"]
 }

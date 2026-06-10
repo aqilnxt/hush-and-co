@@ -5,6 +5,8 @@
   },
   "deploy": {
     "startCommand": "php artisan migrate --force && php artisan storage:link && php artisan serve --host=0.0.0.0 --port=$PORT",
-    "healthcheckPath": "/"
+    "healthcheckPath": "/",
+    "restartPolicyType": "on_failure",
+    "restartPolicyMaxRetries": 0
   }
 }
